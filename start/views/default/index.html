@@ -1,0 +1,196 @@
+{{left_sidebar_enabled,right_sidebar_enabled=False,('message' in globals())}}
+{{extend 'layout.html'}}
+
+<div id="target"></div>
+
+<script id="template" type="text/ractive">
+<div class="title">
+  <h1>Bulletin Board</h1>
+</div>
+
+{% #if user_id == "None" %}
+  <div class="header-buttons">
+    <a href="{% sign_in %}" class="btn btn-warning">Sign In</a>
+    <a href="{% sign_up %}" class="btn btn-success">Sign Up</a>
+  </div>
+{% /if %}
+
+{% #if user_id != "None" %}
+  <div class="create">
+    <div class="item item-new" on-click="new-board">
+      <h4 id="new_board_button" class="board-name-create">Create Board</h4>
+      <h4 class="board-name-new" style="display: none;">New Board Name:</h4>
+      <textarea id="boardname" style="display: none;" value="{% board_name_new %}"  on-focus="board_name_clear"></textarea>
+      <div class="board-creation-buttons">
+        <input id="new_board_submit_button" class="btn btn-success" style="display: none;" type="submit" value="Submit" on-click="board_add"/>
+        <button id="new_board_cancel_button" class="btn btn-default" style="display: none;" on-click="board_add_cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+{% /if %}
+
+<div class="board_list masonry">
+  {% #board_dict:board_index %}
+    <div class="item board-item" data-author="{% author %}" data-boardid="{% board_index %}">
+      <h3 class="board-name" tabindex="0" on-focus="board_editing_start">{% board_name %}</h3>
+      <h4 class="board-name-edit-header" style="display: none;">Edit Board Name:</h4>
+      <textarea class="board-name-edit" style="display: none;" on-blur="board_editing_complete">{% board_name %}</textarea>
+      <div class="view-posts"> <a href="{% board_url + "/" + board_index %}">View Posts</a></div>
+    </div>
+  {% /board_dict %}
+</div>
+
+{% #if loading %}
+  <div id="load_spinner">
+    <i class="fa fa-spinner fa-pulse fa-4x"></i>
+  </div>
+{% /if %}
+
+</script>
+
+<script>
+$(function() {
+
+  // Ractive object
+  var MAIN = new Ractive({
+    el: '#target',
+    template: '#template',
+    delimiters: ['{%', '%}'],
+    tripleDelimiters: ['{%%', '%%}'],
+    data: {
+      sign_in: "{{=URL('default', 'user', args=['login'])}}",
+      sign_up: "{{=URL('default', 'user', args=['register'])}}",
+      board_dict: {},
+      board_id_new: "{{=board_id_new}}",
+      board_name_new: "Type new BoardName here",
+      board_url: "{{=URL('default','posts')}}",
+      loading: true,
+      user_id: "{{=user_id}}"
+    },
+  });
+
+  // Loads the initial list of messages.
+  function load_boardies() {
+    $.ajax("{{=URL('default', 'load_boards')}}",
+          {
+            method: 'POST',
+            success: function (data) {
+              MAIN.set('board_dict', data['board_dict']);
+              MAIN.set('loading', false);
+            }
+          }
+    );
+  }
+
+  load_boardies();
+  setInterval(load_boardies, 10000);
+
+  MAIN.on("new-board", function(e) {
+    var t = $("#boardname"); // This is the button on which we clicked.
+    console.log('boardname', t);
+    $(".board-name-new").show();
+    $("#boardname").show();
+    $("#new_board_button").css( "display", "none" );
+    $("#new_board_cancel_button").css( "display", "inline-block" );
+  });
+
+  MAIN.on("board_name_clear", function(e) {
+    MAIN.set('board_name_new', '');
+    $("#new_board_submit_button").css( "display", "inline-block" );
+  });
+
+  MAIN.on("board_add_cancel", function(e) {
+    MAIN.set('board_name_new', 'Type new BoardName here');
+    $("#new_board_button").show();
+    $(".board-name-new").hide();
+    $("#boardname").css( "display", "none" );
+    $("#new_board_submit_button").css( "display", "none" );
+    $("#new_board_cancel_button").css( "display", "none" );
+    return false;
+  });
+
+  MAIN.on("board_add", function(e) {
+    var board_name = $.trim(MAIN.get('board_name_new'));
+    var board_id = MAIN.get('board_id_new');
+    var user_id =  MAIN.get("user_id");
+    if (board_name.length > 0) {
+      send_board(user_id, board_name, board_id);
+      MAIN.set('board_name_new', 'Type new BoardName here');
+      MAIN.set('board_id_new', generateUUID());
+      $("#new_board_button").show();
+      $(".board-name-new").hide();
+      $("#boardname").css( "display", "none" );
+      $("#new_board_submit_button").css( "display", "none" );
+      $("#new_board_cancel_button").css( "display", "none" );
+    }
+    return false;
+  });
+
+  MAIN.on("board_editing_start", function(e) {
+    var parentNode = $(e.node.parentNode);
+    var user_id =  MAIN.get("user_id");
+    var board_user_id = $(parentNode).data('author');
+    if(user_id == board_user_id) {
+      $('.board-name-edit-header', parentNode).show();
+      $("textarea", parentNode).show();
+      $(".board-name", parentNode).hide();
+      $('.board-name-edit', parentNode).focus();
+    }
+  });
+
+  MAIN.on("board_editing_complete", function(e) {
+    var parentNode = $(e.node.parentNode);
+    var user_id =  MAIN.get("user_id");
+    var board_id = $(parentNode).data('boardid');
+    var board_name = $("textarea.board-name-edit", parentNode).val();
+    if ($.trim(board_name).length > 0) {
+      $('.board-name-edit-header', parentNode).hide();
+      $("textarea", parentNode).hide();
+      $(".board-name", parentNode).show();
+      send_board(user_id, board_name, board_id);
+    } else {
+       $('.board-name-edit', parentNode).focus();
+    }
+  });
+
+
+  function generateUUID(){
+    var d = new Date().getTime();
+    if(window.performance && typeof window.performance.now === "function"){
+        d += performance.now();; //use high-precision timer if available
+    }
+    var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = (d + Math.random()*16)%16 | 0;
+        d = Math.floor(d/16);
+        return (c=='x' ? r : (r&0x3|0x8)).toString(16);
+    });
+    return uuid;
+  }
+
+  function send_board(user_id, board_name, board_id) {
+    $.ajax("{{=URL('default', 'add_board', user_signature=True)}}",
+            {
+              data: {
+                author: user_id,
+                board_id: board_id,
+                board_name: board_name
+              },
+              method: 'POST',
+              success: function() {
+                // Reflect in the list of drafts or messages the update sent to the server.
+                var board_dict = MAIN.get('board_dict');
+                board_dict[board_id] = {
+                  author: user_id,
+                  board_name: board_name
+                }
+                MAIN.set('board_dict', board_dict);
+                console.log("sent: "+board_name+" to server");
+              },
+              error: function() {
+                alert("Could not save "+board_name+" to server");
+              }
+            }
+    );
+  }
+});
+</script>

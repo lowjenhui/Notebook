@@ -1,0 +1,25 @@
+$clrHilight: #bb8833;
+
+@media only screen and (min-width: 400px) {
+    .masonry {
+        @include column-count(2);
+    }
+}
+
+@media only screen and (min-width: 700px) {
+    .masonry {
+        @include column-count(3);
+    }
+}
+
+@media only screen and (min-width: 900px) {
+    .masonry {
+        @include column-count(4);
+    }
+}
+
+@media only screen and (min-width: 1100px) {
+    .masonry {
+        @include column-count(5);
+    }
+}

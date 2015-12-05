@@ -1,0 +1,386 @@
+{{left_sidebar_enabled,right_sidebar_enabled=False,('message' in globals())}}
+{{extend 'layout.html'}}
+
+<div id="target"></div>
+
+<script id="template" type="text/ractive">
+<div class="title">
+  <h1>{% board_name %}</h1>
+</div>
+
+<div id="post_title_missing" class="alert alert-danger" style="display: none;">
+  <span class="glyphicon glyphicon-exclamation-sign"></span>
+  <span>Error:</span>
+  Please enter a post title
+</div>
+
+<div class="header-buttons">
+  <a href="{% board_index %}" class="btn btn-info">View Boards</a>
+  {% #if user_id == "None" %}
+    <a href="{% sign_in %}" class="btn btn-warning">Sign In</a>
+    <a href="{% sign_up %}" class="btn btn-success">Sign Up</a>
+  {% /if %}
+  {% #if delete_available %}
+    <button id="post_delete_button" class="btn btn-danger" on-click="delete_queued">Delete Post(s) <i class="fa fa-trash"></i></button>
+  {% /if %}
+</div>
+
+{% #if user_id != "None" %}
+  <div class="create">
+    <div  class="item item-new" on-click="new-post">
+      <h4 id="new_post_button" class="post-create">Create Post</h4>
+      <h4 id="new_post" class="post-create-new" style="display: none;">Create New Post:</h4>
+      <textarea id="post_title" style="display: none;" on-focus="post_defaults_clear" on-keypress="post_title_listener" value="{% post_title_new %}"></textarea>
+      <textarea id="post_description" style="display: none;" on-focus="post_defaults_clear" value="{% post_description_new %}"></textarea>
+      <div>
+        <input id="new_post_submit_button" class="btn btn-primary" style="display: none;" type="submit" value="Submit" on-click="post_add"/>
+        <button id="new_post_cancel_button" class="btn btn-default" style="display: none;" on-click="post_add_cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+{% /if %}
+
+<div class="post_list masonry">
+  {% #post_dict:post_index %}
+    <div class="item post-item" data-author="{% author %}" data-postid="{% post_index %}" data-state="default">
+      {% #if author == user_id %}
+        <div style="text-align: right;">
+          <i class="fa fa-times" on-click="delete_queue"></i>
+        </div>
+      {% /if %}
+      <h4 class="post-edit" style="display: none;">Editing Post:</h4>
+      <h3 class="post-title post-default" tabindex="0" on-focus="post_editing">{% post_title %}</h3>
+      <textarea class="post-title-edit" style="display: none;" on-blur="post_editing_complete" on-focus="post_editing_start">{% post_title %}</textarea>
+      
+      <h5 class="post-description post-default" tabindex="0" on-focus="post_editing">{% post_description %}</h5>
+      <textarea class="post-description-edit" style="display: none;" on-blur="post_editing_complete" on-focus="post_editing_start">{% post_description %}</textarea>
+      {% #if saving_draft %}
+        <p class="post-edit-saving" style="display: none;"><i class="fa fa-spinner fa-pulse fa-1x"></i></p>
+      {% /if %}
+      <p class="post-edit-saved-success" style="display: none;">Saved to Server</p>
+      <p class="post-edit-save-failure" style="display: none;"><i class="fa fa-exclamation-triangle"></i> Could not save to server</p>
+      
+      <p class="post-time post-default">Edited: {% returnDate( post_time_js ) %}</p>      
+    </div>
+  {% /post_dict %}
+</div>
+
+{% #if loading %}
+  <div id="load_spinner">
+    <i class="fa fa-spinner fa-pulse fa-4x"></i>
+  </div>
+{% /if %}
+
+</script>
+
+<script>
+$(function() {
+  var helpers = Ractive.defaults.data;
+  helpers.returnDate = returnDate;
+  // Ractive object
+  var MAIN = new Ractive({
+    el: '#target',
+    template: '#template',
+    delimiters: ['{%', '%}'],
+    tripleDelimiters: ['{%%', '%%}'],
+    data: {
+      sign_in: "{{=URL('default', 'user', args=['login'])}}",
+      sign_up: "{{=URL('default', 'user', args=['register'])}}",
+      board_index: "{{=URL('default','index')}}",
+      post_dict: {},
+      board_name: "{{=board_name}}",
+      board_id: "{{=board_id}}",
+      post_id_new: "{{=post_id_new}}",
+      post_title_new: "Type new postTitle here",
+      post_description_new: "Type postDescription here (optional)",
+      loading: true,
+      editing_interval: "",
+      editing_draft_complete: false,
+      saving_draft: false,
+      delete_available: false,
+      delete_array: [],
+      user_id: "{{=user_id}}"
+    },
+  });
+
+  // Loads the initial list of messages.
+  function load_posties() {
+    var board_id = MAIN.get('board_id');
+    $.ajax("{{=URL('default', 'load_posts')}}",
+          {
+            data: {
+              board_id: board_id
+            },
+            method: 'POST',
+            success: function (data) {
+              MAIN.set('post_dict', data['post_dict']);
+              MAIN.set('loading', false);
+              console.log("loaded new posts!");
+            }, 
+            error: function() {
+              alert("Could not get posts from server");
+            }
+          }
+    );
+  }
+
+  load_posties();
+  setInterval(load_posties, 10000);
+
+  MAIN.on("new-post", function(e) {
+    $("#new_post").show();
+    $("#post_title").show();
+    $("#post_description").show();
+    $("#new_post_button").hide();
+    $("#new_post_cancel_button").show();
+  });
+
+  MAIN.on("post_defaults_clear", function(e) {
+    var post_title = MAIN.get('post_title_new');
+    if (post_title === "Type new postTitle here") {
+      MAIN.set('post_title_new', '');
+    }
+    var post_description = MAIN.get('post_description_new');
+    if (post_description === "Type postDescription here (optional)") {
+      MAIN.set('post_description_new', '');
+    }
+    $("#new_post_submit_button").css( "display", "inline-block" );
+  });
+
+  MAIN.on("post_title_listener", function(e) {
+    var post_title = $.trim(e.node.value);
+    if (post_title.length > 0) {
+      $("#post_title_missing").css( "display", "none" );
+    }
+  });
+
+  MAIN.on("post_add_cancel", function(e) {
+    MAIN.set('post_title_new',  "Type new postTitle here");
+    MAIN.set('post_description_new', "Type postDescription here (optional)");
+    $("#new_post").hide();
+    $("#new_post_button").css( "display", "block" );
+    $("#post_title").css( "display", "none" );
+    $("#post_description").css( "display", "none" );
+    $("#new_post_submit_button").css( "display", "none" );
+    $("#new_post_cancel_button").css( "display", "none" );
+    return false;
+  });
+
+  MAIN.on("post_add", function(e) {
+    var post_title = $.trim(MAIN.get('post_title_new'));
+    var post_description = $.trim(MAIN.get('post_description_new'));
+    var post_id = MAIN.get('post_id_new');
+    var board_id = MAIN.get('board_id');
+    var user_id = MAIN.get("user_id");
+
+    if (post_title.length > 0) {
+      $("#post_title_missing").css( "display", "none" );
+      send_post(user_id, post_title, post_description, post_id, board_id);
+      MAIN.set('post_title_new',  "Type new postTitle here");
+      MAIN.set('post_description_new', "Type postDescription here (optional)");
+      MAIN.set('post_id_new', generateUUID());
+      $("#new_post_button").css( "display", "block" );
+      $("#post_title").css( "display", "none" );
+      $("#post_description").css( "display", "none" );
+      $("#new_post_submit_button").css( "display", "none" );
+      $("#new_post_cancel_button").css( "display", "none" );
+    } else {
+      $("#post_title_missing").css( "display", "block" );
+    }
+    return false;
+  });
+
+  function generateUUID(){
+    var d = new Date().getTime();
+    if(window.performance && typeof window.performance.now === "function"){
+        d += performance.now();; //use high-precision timer if available
+    }
+    var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = (d + Math.random()*16)%16 | 0;
+        d = Math.floor(d/16);
+        return (c=='x' ? r : (r&0x3|0x8)).toString(16);
+    });
+    return uuid;
+  }
+
+  function returnDate(post_time_js) {
+    var date_object = new Date(parseInt(post_time_js));
+    var date = date_object.getDate();
+    var month = date_object.getMonth() + 1;
+    var year = date_object.getFullYear();
+    var time = date_object.toLocaleTimeString();
+    var prettyDate = date+"/"+month+"/"+year+" "+time;
+    return prettyDate;
+  }
+
+  function send_post(user_id, post_title, post_description, post_id, board_id) {
+    var post_time_js = new Date().getTime();
+    var is_saving_draft = MAIN.get("saving_draft");
+    console.log("saving_draft", is_saving_draft);
+    $.ajax("{{=URL('default', 'add_post', user_signature=True)}}",
+            {
+              data: {
+                board_id: board_id,
+                post_id: post_id,
+                post_title: post_title,
+                post_description: post_description,
+                post_time_js: post_time_js
+              },
+              method: 'POST',
+              success: function() {
+                MAIN.set('post_dict.' + post_id , {
+                  author: user_id,
+                  post_title: post_title,
+                  post_description: post_description,
+                  post_time_js: post_time_js
+                });
+
+                if (is_saving_draft) {
+                  $(".post-edit-saved-success", $('div[data-postid="'+post_id+'"]')).show();
+                } 
+                MAIN.set('saving_draft', false);
+                if (MAIN.get('editing_draft_complete')) {
+                  $(".post-edit-saved-success", $('div[data-postid="'+post_id+'"]')).hide();
+                  MAIN.set('editing_draft_complete', false);
+                }
+                console.log("saved: "+post_title+" to server");
+              },
+              error: function() {
+                if (is_saving_draft) {
+                  $(".post-edit-save-failure", $('div[data-postid="'+post_id+'"]')).show();
+                } 
+                MAIN.set('saving_draft', false);
+                alert("Could not save "+post_title+" to server");
+              }
+            }
+    );
+  }
+
+  MAIN.on("post_editing", function(e) {
+    var parentNode = $(e.node.parentNode);
+    var user_id = $(parentNode).data('author');
+
+    if(user_id == {{=auth.user_id}}) {
+      $('.post-edit', parentNode).show();
+      $("textarea", parentNode).show();
+      $(".post-default", parentNode).hide();
+
+      if ($(e.node).hasClass('post-title')) {
+        $('.post-title-edit', parentNode).focus();
+      } else {
+        $('.post-description-edit', parentNode).focus();      
+      }
+    }
+  });
+
+  MAIN.on("post_editing_start", function(e) {
+    console.log("post_editing_start!!!");
+    var interval = setInterval(function() {update_posties(e)}, 10000);
+    console.log("interval set", interval);
+    MAIN.set('editing_interval', interval);
+  });
+
+  MAIN.on("post_editing_complete", function(e) {
+    var parentNode = $(e.node.parentNode);
+    MAIN.set('editing_draft_complete', true);
+    $('.post-edit', parentNode).hide();
+    $("textarea", parentNode).hide();
+    $(".post-default", parentNode).show();
+    update_posties(e);
+  });
+
+  function update_posties(e) {
+    console.log("updating posties is called!!!");
+    var user_id = MAIN.get("user_id");
+    var parentNode = $(e.node.parentNode);
+    var post_id = $(parentNode).data('postid');
+    var post_title = $("textarea.post-title-edit", parentNode).val();
+    var post_description = $("textarea.post-description-edit", parentNode).val();
+    var board_id = MAIN.get('board_id');
+    $(".post-edit-saved-success").hide();
+    $(".post-edit-save-failure").hide();
+    
+    if ($.trim(post_title).length > 0) {
+      MAIN.set('saving_draft', true);
+      if (MAIN.get('editing_draft_complete')) {
+        var interval = MAIN.get('editing_interval');
+        clearInterval(interval);
+        console.log('interval was cleared');
+      }
+      $("#post_title_missing").css( "display", "none" );
+      send_post(user_id, post_title, post_description, post_id, board_id);
+    } else {
+      MAIN.set('editing_draft_complete', false);
+      $("#post_title_missing").css( "display", "block" );
+      $('.post-edit', parentNode).show();
+      $("textarea", parentNode).show();
+      $(".post-default", parentNode).hide();
+      $('.post-title-edit', parentNode).focus();
+    }
+  }
+
+  MAIN.on("delete_queue", function(e) {
+    var post = $(e.node.parentNode.parentNode);
+    var post_state = post.data('state');
+    var post_id = post.data('postid');
+    var delete_array = MAIN.get('delete_array');
+    if (post_state === 'default') {
+      post.attr('data-state', 'delete');
+      post.data('state', 'delete');
+      post.css('background', 'orange');
+      delete_array.push(post_id);
+      console.log("delete_array_add", delete_array);
+      MAIN.set('delete_array', delete_array);
+      if ($("div[data-state='delete']").size() > 0) {
+        MAIN.set('delete_available', true);
+      }
+    } else {
+      post.attr('data-state', 'default');
+      post.data('state', 'default');
+      var index = delete_array.indexOf(post_id);
+      if(index != -1) {
+        delete_array.splice(index, 1);
+        MAIN.set('delete_array', delete_array);
+      }
+
+      post.css('background-color', 'rgb(255, 255, 141)');
+      if ($("div[data-state='delete']").size() == 0) {
+        MAIN.set('delete_available', false);
+      }
+    }
+  });
+
+  MAIN.on("delete_queued", function(e) {
+    var delete_array = MAIN.get('delete_array');
+    var board_id = MAIN.get('board_id');    
+    delete_post(delete_array, board_id);
+    MAIN.set('delete_array', []);
+    MAIN.set('delete_available', false);
+  });
+
+  function delete_post(delete_array, board_id) {
+    console.log("delete_array", delete_array);
+    $.ajax("{{=URL('default', 'delete_post', user_signature=True)}}",
+            {
+              data: {
+                board_id: board_id,
+                delete_array: delete_array
+              },
+              method: 'POST',
+              success: function() {
+              var post_dict = MAIN.get('post_dict');
+              for (i=0; i<delete_array.length; i++) {
+                var post_id = delete_array[i];
+                delete post_dict[post_id];
+              }
+              MAIN.set('post_dict', post_dict);
+                console.log("deleted to server");
+              },
+              error: function() {
+                alert("Could not delete to server");
+              }
+            }
+    );
+  }
+});
+</script>

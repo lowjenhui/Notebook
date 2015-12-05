@@ -1,0 +1,97 @@
+.colorful {
+  color: $clrHilight;
+}
+
+body {
+    background: rgb(232, 232, 232);
+}
+
+.title {
+    text-align: center;
+}
+
+.header-buttons {
+    text-align: center;
+    padding-bottom: 2em;
+}
+
+.empty-message {
+    text-align: center;
+    font-style: italic;
+}
+
+.masonry {
+    margin: 1.5em 0;
+    padding: 0;
+    @include column-gap(1.5em);
+    font-size: .85em;
+}
+
+.item {
+    background-color: rgb(255, 255, 141);
+    @include inline-block;
+    padding: 1em 1em 0.5em 1em;
+    margin: 0 0 1em;
+    width: 100%;
+    @include box-sizing(border-box);
+    box-shadow: 2px 2px 4px 0 #ccc;
+}
+
+.board-item {
+    background-color: rgb(167, 255, 235);
+    text-align:center;
+}
+
+.view-posts {
+    padding-bottom: 0.1em;
+    font-style: italic;
+}
+
+.create {
+    margin: auto;
+    max-width:250px;
+}
+
+.item-new {
+    background-color: #3E5884;
+    text-align:center;
+    padding: 0.5em;
+}
+
+.board-name-create {
+    color: white;
+    text-align: center;
+    margin-top: 10px;
+}
+
+.board-name-new {
+    color: white;
+    text-align: center;
+}
+
+.post-create {
+    color: white;
+    text-align: center;
+    margin-top: 10px;
+}
+
+.post-create-new {
+    color: white;
+    text-align: center;
+    margin-top: 10px;
+}
+
+.board-name {
+    font-weight: bold;
+    text-align: center;
+    padding-bottom: 1em;
+    border-bottom: #9AFBE5 solid 1px;
+}
+
+.post-time {
+    text-align: right;
+    margin: 0em;
+    font-size: .98em;
+    font-style: italic;
+    color: rgba(146, 5, 39, 0.55);
+}
