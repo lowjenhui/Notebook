@@ -26,12 +26,21 @@ db.define_table('board',
     Field('post_description', 'text'),
     Field('post_image_url'),
     Field('post_list'),
-    Field('post_comments'),
     Field('author', db.auth_user, default=auth.user_id),
-    Field('colour'),
-    Field('size'))
+    Field('post_colour'),
+    Field('post_size'))
 
 db.board.board_id.readable = db.board.board_id.writable = False
 db.board.id.readable = db.board.id.writable = False
 db.board.author.readable = db.board.author.writable = False
 db.board.post_id.readable = db.board.post_id.writable = False
+
+db.define_table('post_comments',
+    Field('post_id'),
+    Field('post_time', 'datetime'),
+    Field('author', db.auth_user, default=auth.user_id),
+    Field('content'))
+
+db.define_table('permissions',
+    Field('post_id'),
+    Field('author', db.auth_user, default=auth.user_id))
