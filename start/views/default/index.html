@@ -1,3 +1,13 @@
+{{left_sidebar_enabled,right_sidebar_enabled=False,('message' in globals())}}
+{{extend 'layout.html'}}
+
+<div id="target"></div>
+
+<script id="template" type="text/ractive">
+<div class="title">
+  <h1>Note Book</h1>
+</div>
+
 <div class="search">
 	<div class="input-group">
       <span class="input-group-btn">
@@ -9,51 +19,88 @@
     </div>
 </div>
 
-<div class="new_post">
-    <div class="postit-new-default"></div>
-	<div class="postit-new-list">
+<div class="new_note">
+    <div class="note-new-default"></div>
+	<div class="note-new-list">
 		<i class="fa fa-list"></i>
 	</div>
-	<div class="postit-new-img">
+	<div class="note-new-img">
 		<i class="fa fa-picture-o"></i>
 	</div>
 </div>
 
-<div class="post_list">
-  {% #board_dict:post_index %}
-    <div class="postit-item" data-author="" data-postid="{% post_index %}">
-		<div class="postit-favourite"><i class="fa fa-heart"></i></div>
-    	<h3 class="postit-title"></h3>
-    	<h5 class="postit-description"></h5>
-    	<div class="postit-list"></div>
-    	<img class="postit-img" src=""/>
-    	<div class="postit-tags"></div>
-    	<div class="postit-buttons">
+<div class="notes_list">
+  {% #notes_dict:note_index %}
+    <div class="note-item" data-author="" data-noteid="{% note_index %}">
+		<div class="note-favourite"><i class="fa fa-heart"></i></div>
+    	<h3 class="note-title"></h3>
+    	<h5 class="note-description"></h5>
+    	<div class="note-list"></div>
+    	<img class="note-img" src=""/>
+    	<div class="note-tags"></div>
+    	<div class="note-buttons">
 	      	<i class="fa fa-user-plus"></i>
 	      	<i class="fa fa-paint-brush"></i>
 	      	<i class="fa fa-tag"></i>
 	      	<i class="fa fa-trash"></i>
 		</div>
-		<div class="postit-authors"></div>
+		<div class="note-authors"></div>
     </div>
   {% /board_dict %}
 </div>
 
-<div class="post_view">
-    <div class="postit-item" data-author="" data-postid="{% post_index %}">
-		<div class="postit-favourite"><i class="fa fa-heart"></i></div>
-    	<h3 class="postit-title"></h3>
-    	<h5 class="postit-description"></h5>
-		<div class="postit-list"></div>
-    	<img class="postit-img" src=""/>
-    	<div class="postit-time"></div>
-    	<div class="postit-tags"></div>
-    	<div class="postit-buttons">
+<div class="note_view">
+    <div class="note-item" data-author="" data-noteid="{% note_index %}">
+		<div class="note-favourite"><i class="fa fa-heart"></i></div>
+    	<h3 class="note-title"></h3>
+    	<h5 class="note-description"></h5>
+		<div class="note-list"></div>
+    	<img class="note-img" src=""/>
+    	<div class="note-time"></div>
+    	<div class="note-tags"></div>
+    	<div class="note-buttons">
 	      	<i class="fa fa-user-plus"></i>
 	      	<i class="fa fa-paint-brush"></i>
 	      	<i class="fa fa-tag"></i>
 	      	<i class="fa fa-trash"></i>
 		</div>
-		<div class="postit-authors"></div>
+		<div class="note-authors"></div>
     </div>
 </div>
+
+</script>
+
+<script>
+$(function() {
+
+  // Ractive object
+  var MAIN = new Ractive({
+    el: '#target',
+    template: '#template',
+    delimiters: ['{%', '%}'],
+    tripleDelimiters: ['{%%', '%%}'],
+    data: {
+      sign_in: "{{=URL('default', 'user', args=['login'])}}",
+      sign_up: "{{=URL('default', 'user', args=['register'])}}",
+      notes_dict: {},
+      note_id_new: "{{=note_id_new}}",
+      user_id: "{{=user_id}}"
+    },
+  });
+
+  // Loads the initial list of messages.
+  function load_notes() {
+    $.ajax("{{=URL('default', 'load_notes')}}",
+          {
+            method: 'POST',
+            success: function (data) {
+              MAIN.set('notes_dict', data['notes_dict']);
+            }
+          }
+    );
+  }
+
+  load_notes();
+ });
+
+ </script>

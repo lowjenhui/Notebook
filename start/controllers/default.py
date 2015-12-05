@@ -15,25 +15,25 @@ import time
 
 def index():
     user_id = auth.user_id
-    post_id_new = gluon_utils.web2py_uuid()
-    return dict(post_id_new=post_id_new, user_id=user_id)
+    note_id_new = gluon_utils.web2py_uuid()
+    return dict(note_id_new=note_id_new, user_id=user_id)
 
-def load_posts():
-    """Loads all boards."""
-    board_list = db().select(db.board.ALL)
-    post_dict = {}
-    for b in board_list:
-        post_dict[b.board_id] = {
-            'author': b.author,
-            'post_title': b.post_title,
-            'post_time_js': b.post_time_js,
-            'post_time': b.post_time,
-            'post_description': b.post_description,
-            'post_image_url': b.post_image_url,
-            'post_list': b.post_list,
-            'post_color': b.post_color,
-            'post_size': b.post_size}
-    return response.json(dict(post_dict=post_dict))
+def load_notes():
+    """Loads all notes."""
+    note_list = db().select(db.notes.ALL)
+    notes_dict = {}
+    for n in note_list:
+        notes_dict[n.note_id] = {
+            'note_author': n.note_author,
+            'note_title': n.note_title,
+            'note_time_js': n.note_time_js,
+            'note_time': n.note_time,
+            'note_description': n.note_description,
+            'note_image_url': n.note_image_url,
+            'note_list': n.note_list,
+            'note_colour': n.note_colour,
+            'note_size': n.note_size}
+    return response.json(dict(notes_dict=notes_dict))
 
 def js_to_python_utctime(js_time_stamp):
     return datetime.utcfromtimestamp(int(js_time_stamp)/1000)

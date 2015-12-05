@@ -18,29 +18,28 @@
 from datetime import datetime
 
 # Here is a table for boards.
-db.define_table('board',
-    Field('post_id'),
-    Field('post_title', required=True),
-    Field('post_time_js', 'integer'),
-    Field('post_time', 'datetime'),
-    Field('post_description', 'text'),
-    Field('post_image_url'),
-    Field('post_list'),
-    Field('author', db.auth_user, default=auth.user_id),
-    Field('post_colour'),
-    Field('post_size'))
+db.define_table('notes',
+    Field('note_id'),
+    Field('note_title', required=True),
+    Field('note_time_js', 'integer'),
+    Field('note_time', 'datetime'),
+    Field('note_description', 'text'),
+    Field('note_image_url'),
+    Field('note_list'),
+    Field('note_author', db.auth_user, default=auth.user_id),
+    Field('note_colour'),
+    Field('note_size'))
 
-db.board.board_id.readable = db.board.board_id.writable = False
-db.board.id.readable = db.board.id.writable = False
-db.board.author.readable = db.board.author.writable = False
-db.board.post_id.readable = db.board.post_id.writable = False
+db.notes.note_id.readable = db.notes.note_id.writable = False
+db.notes.id.readable = db.notes.id.writable = False
+db.notes.note_author.readable = db.notes.note_author.writable = False
 
-db.define_table('post_comments',
-    Field('post_id'),
-    Field('post_time', 'datetime'),
-    Field('author', db.auth_user, default=auth.user_id),
-    Field('content'))
+db.define_table('note_comments',
+    Field('note_id'),
+    Field('note_time', 'datetime'),
+    Field('note_author', db.auth_user, default=auth.user_id),
+    Field('note_content'))
 
 db.define_table('permissions',
-    Field('post_id'),
-    Field('author', db.auth_user, default=auth.user_id))
+    Field('note_id'),
+    Field('note_author', db.auth_user, default=auth.user_id))
