@@ -43,3 +43,7 @@ db.define_table('note_comments',
 db.define_table('permissions',
     Field('note_id'),
     Field('note_author', db.auth_user, default=auth.user_id))
+
+db.define_table('tags',
+    Field('note_id'),
+    Field('tag'))

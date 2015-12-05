@@ -20,49 +20,51 @@
 </div>
 
 <div class="new_note">
-    <div class="note-new-default"></div>
-	<div class="note-new-list">
-		<i class="fa fa-list"></i>
-	</div>
-	<div class="note-new-img">
-		<i class="fa fa-picture-o"></i>
-	</div>
+    <div class="note-new-default" style="display: inline-block;"> Add Note </div>
+  	<div class="note-new-list" style="display: inline-block;">
+  		<i class="fa fa-list"></i>
+  	</div>
+  	<div class="note-new-img" style="display: inline-block;">
+  		<i class="fa fa-picture-o"></i>
+  	</div>
 </div>
 
 <div class="notes_list">
   {% #notes_dict:note_index %}
-    <div class="note-item" data-author="" data-noteid="{% note_index %}">
+    <div class="note-item" data-author="" data-noteid="{% note_index %}" style="border: purple 1px solid;">
 		<div class="note-favourite"><i class="fa fa-heart"></i></div>
-    	<h3 class="note-title"></h3>
-    	<h5 class="note-description"></h5>
-    	<div class="note-list"></div>
-    	<img class="note-img" src=""/>
-    	<div class="note-tags"></div>
-    	<div class="note-buttons">
-	      	<i class="fa fa-user-plus"></i>
-	      	<i class="fa fa-paint-brush"></i>
-	      	<i class="fa fa-tag"></i>
-	      	<i class="fa fa-trash"></i>
-		</div>
+  	<h3 class="note-title">{% note_title %}</h3>
+  	<h5 class="note-description">{% note_description %}</h5>
+  	<div class="note-list">{% note_list %}</div>
+  	<img class="note-img" src="{% note_image_url %}"/>
+  	<div class="note-tags"></div>
+  	<div class="note-buttons" style="display: none">
+      	<i class="fa fa-user-plus"></i>
+      	<i class="fa fa-paint-brush"></i>
+      	<i class="fa fa-tag"></i>
+      	<i class="fa fa-trash"></i>
+	  </div>
 		<div class="note-authors"></div>
     </div>
   {% /board_dict %}
 </div>
 
-<div class="note_view">
+<div class="note_view" style="border: red 1px solid;">
     <div class="note-item" data-author="" data-noteid="{% note_index %}">
-		<div class="note-favourite"><i class="fa fa-heart"></i></div>
-    	<h3 class="note-title"></h3>
-    	<h5 class="note-description"></h5>
+		<div class="note-favourite" style="text-align: right;">
+      <i class="fa fa-heart"></i>
+    </div>
+    <h3 class="note-title">Really dummy title</h3>
+    <h5 class="note-description">Some random description</h5>
 		<div class="note-list"></div>
-    	<img class="note-img" src=""/>
-    	<div class="note-time"></div>
-    	<div class="note-tags"></div>
-    	<div class="note-buttons">
-	      	<i class="fa fa-user-plus"></i>
-	      	<i class="fa fa-paint-brush"></i>
-	      	<i class="fa fa-tag"></i>
-	      	<i class="fa fa-trash"></i>
+  	<img class="note-img" src=""/>
+  	<div class="note-time"></div>
+  	<div class="note-tags"></div>
+  	<div class="note-buttons">
+      <i class="fa fa-user-plus"></i>
+      <i class="fa fa-paint-brush"></i>
+      <i class="fa fa-tag"></i>
+      <i class="fa fa-trash"></i>
 		</div>
 		<div class="note-authors"></div>
     </div>
