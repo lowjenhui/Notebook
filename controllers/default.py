@@ -19,8 +19,9 @@ def index():
     return dict(note_id_new=note_id_new, user_id=user_id)
 
 def load_notes():
-    """Loads all notes."""
-    note_list = db().select(db.notes.ALL)
+    """Loads all notes by or shared to the current user."""
+    note_list = db((db.notes.note_author==auth.user_id) | (db.shared_notes.shared_author==auth.user_id)).select(
+        db.notes.ALL, left=db.shared_notes.on(db.notes.note_id==db.shared_notes.note_id))
     notes_dict = {}
     for n in note_list:
         notes_dict[n.note_id] = {
