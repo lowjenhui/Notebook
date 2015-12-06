@@ -19,9 +19,9 @@
     </div>
 </div>
 
-<div class="new_note" style="border: green 1px solid; margin: 10px 0px;">
+<div class="new_note" style="border: green 1px solid; margin: 10px 0px;" data-noteid="{% note_id_new %}">
     <div class="note-new-bar">
-      <div class="note-new-note" style="display: inline-block; border: blue 1px solid; padding: 0px 10px;"> Add Note </div>
+      <div class="note-new-note" style="display: inline-block; border: blue 1px solid; padding: 0px 10px;" on-click="note_new"> Add Note </div>
     	<div class="note-new-list" style="display: inline-block;">
         <i class="fa fa-list"></i>
       </div>
@@ -29,8 +29,10 @@
         <i class="fa fa-picture-o"></i>
       </div>
     </div>
-    <div class="note-new-body" style="display: auto;">
-      <div class="note-new-title"> Add Note Title </div>
+    <div class="note-new-body" style="display: none;">
+      <div class="note-new-title" style="padding: 2px 10px;" contenteditable="true">
+        <h4> Add Note Title </h4>
+      </div>
       <div class="note-new-default" style="border: blue 1px solid; padding: 20px 10px;" contenteditable="true"> Note goes here </div>
       <div class="note-buttons">
           <i class="fa fa-user-plus"></i>
@@ -39,7 +41,7 @@
           <i class="fa fa-trash"></i>
       </div>
       <input id="new_board_done" class="btn btn-primary" type="submit" value="Submit"/>
-      <button id="new_post_cancel_button" class="btn btn-default">Cancel</button>
+      <button id="new_post_cancel_button" class="btn btn-default" on-click="note_new_cancel">Cancel</button>
     </div>
 </div>
 
@@ -99,7 +101,7 @@ $(function() {
       sign_in: "{{=URL('default', 'user', args=['login'])}}",
       sign_up: "{{=URL('default', 'user', args=['register'])}}",
       notes_dict: {},
-      note_id_new: "{{=note_id_new}}",
+      note_id_new: "",
       user_id: "{{=user_id}}"
     },
   });
@@ -117,6 +119,34 @@ $(function() {
   }
 
   load_notes();
+
+  function generateUUID(){
+    var d = new Date().getTime();
+    if(window.performance && typeof window.performance.now === "function"){
+        d += performance.now();; //use high-precision timer if available
+    }
+    var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = (d + Math.random()*16)%16 | 0;
+        d = Math.floor(d/16);
+        return (c=='x' ? r : (r&0x3|0x8)).toString(16);
+    });
+    return uuid;
+  }
+
+  MAIN.on("note_new", function(e) {
+    console.log('onclick', e);
+    $(".note-new-body").show();
+    $(".note-new-bar").hide();
+    MAIN.set('note_id_new', generateUUID());
+  });
+
+  MAIN.on("note_new_cancel", function(e) {
+    $(".note-new-body").hide();
+    $(".note-new-bar").show();
+    MAIN.set('note_id_new', generateUUID());
+    return false;
+  });
+
  });
 
  </script>
