@@ -33,14 +33,14 @@
       <div class="note-new-title" style="padding: 2px 10px;" contenteditable="true">
         <h4> Add Note Title </h4>
       </div>
-      <div class="note-new-default" style="border: blue 1px solid; padding: 20px 10px;" contenteditable="true"> Note goes here </div>
+      <div class="note-new-default" style="border: blue 1px solid; padding: 20px 10px;" contenteditable="true" on-keydown="note-new-edit"> Add Note </div>
       <div class="note-buttons">
           <i class="fa fa-user-plus"></i>
           <i class="fa fa-paint-brush"></i>
           <i class="fa fa-tag"></i>
           <i class="fa fa-trash"></i>
       </div>
-      <input id="new_board_done" class="btn btn-primary" type="submit" value="Submit"/>
+      <input id="new_board_done" class="btn btn-primary" type="submit" value="Submit" on-click="note_submit"/>
       <button id="new_post_cancel_button" class="btn btn-default" on-click="note_new_cancel">Cancel</button>
     </div>
 </div>
@@ -54,11 +54,12 @@
     	<div class="note-list">{% note_list %}</div>
     	<img class="note-img" src="{% note_image_url %}"/>
     	<div class="note-tags"></div>
-    	<div class="note-buttons" style="display: none">
+    	<div class="note-buttons" style="display: auto">
         	<i class="fa fa-user-plus"></i>
         	<i class="fa fa-paint-brush"></i>
         	<i class="fa fa-tag"></i>
         	<i class="fa fa-trash"></i>
+          <span>{% returnDate( note_time ) %}</span>
   	  </div>
   		<div class="note-authors"></div>
     </div>
@@ -90,7 +91,8 @@
 
 <script>
 $(function() {
-
+  var helpers = Ractive.defaults.data;
+  helpers.returnDate = returnDate;
   // Ractive object
   var MAIN = new Ractive({
     el: '#target',
@@ -118,6 +120,16 @@ $(function() {
     );
   }
 
+  function returnDate(note_time) {
+    var date_object = new Date(parseInt(note_time));
+    var date = date_object.getDate();
+    var month = date_object.getMonth() + 1;
+    var year = date_object.getFullYear();
+    var time = date_object.toLocaleTimeString();
+    var prettyDate = date+"/"+month+"/"+year+" "+time;
+    return prettyDate;
+  }
+
   load_notes();
 
   function generateUUID(){
@@ -138,14 +150,64 @@ $(function() {
     $(".note-new-body").show();
     $(".note-new-bar").hide();
     MAIN.set('note_id_new', generateUUID());
+    $( ".note-new-title" ).one( "keydown", function() {
+      $( ".note-new-title > h4" ).empty();
+    });
+    $( ".note-new-default" ).one( "keydown", function() {
+      $( ".note-new-default" ).empty();
+    });
   });
 
   MAIN.on("note_new_cancel", function(e) {
+    set_new_note();
+  });
+
+  function set_new_note() {
     $(".note-new-body").hide();
     $(".note-new-bar").show();
     MAIN.set('note_id_new', generateUUID());
-    return false;
+    $( ".note-new-title > h4" ).text("Add Note Title");
+    $( ".note-new-default" ).text("Add Note");
+  }
+
+  MAIN.on("note_submit", function(e) {
+    var user_id = MAIN.get("user_id");
+    console.log("notesubmit-node", e.node);
+    var note_id = $(e.node.parentNode.parentNode).data('noteid');
+    var note_title = $(".note-new-title > h4").text();
+    var note_description = $(".note-new-default").text();
+    console.log("user_id, note_id, note_title, note_description", user_id, note_id, note_title, note_description);
+      send_note(user_id, note_id, note_title, note_description);
   });
+
+  function send_note(user_id, note_id, note_title, note_description) {
+    var note_time_js = new Date().getTime();
+    $.ajax("{{=URL('default', 'add_note', user_signature=True)}}",
+            {
+              data: {
+                note_author: user_id,
+                note_id: note_id,
+                note_title: note_title,
+                note_description: note_description,
+                note_time: note_time_js
+              },
+              method: 'POST',
+              success: function() {
+                MAIN.set('notes_dict.' + note_id , {
+                  note_author: user_id,
+                  note_time: note_time_js,
+                  note_title: note_title,
+                  note_description: note_description
+                });
+                console.log("saved: "+note_title+" to server");
+                set_new_note();
+              },
+              error: function() {
+                alert("Could not save note to server");
+              }
+            }
+    );
+  }
 
  });
 

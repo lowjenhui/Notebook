@@ -25,8 +25,8 @@ def load_notes():
     for n in note_list:
         notes_dict[n.note_id] = {
             'note_author': n.note_author,
-            'note_title': n.note_title,
             'note_time': python_utctime_to_js(n.note_time),
+            'note_title': n.note_title,
             'note_description': n.note_description,
             'note_image_url': n.note_image_url,
             'note_list': n.note_list,
@@ -39,7 +39,17 @@ def js_to_python_utctime(js_time_stamp):
 
 def python_utctime_to_js(utctime):
     delta = utctime - datetime(1970, 1, 1)
-    return delta.microseconds + (delta.seconds + delta.days * 24 * 3600) * 10**6
+    return delta.microseconds + (delta.seconds + delta.days * 24 * 3600) * 10**3
+
+@auth.requires_signature()
+def add_note():
+    db.notes.update_or_insert((db.notes.note_id == request.vars.note_id),
+            note_id=request.vars.note_id,
+            note_author=request.vars.note_author,
+            note_time=js_to_python_utctime(request.vars.note_time),
+            note_title=request.vars.note_title,
+            note_description=request.vars.note_description)
+    return "ok"
 
 def user():
     """
