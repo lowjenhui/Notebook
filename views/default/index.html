@@ -183,6 +183,7 @@ $(function() {
     var user_id = MAIN.get("user_id");
     console.log("notesubmit-node", e.node);
     var note_id = $(e.node.parentNode.parentNode).data('noteid');
+    var note_colour = $(e.node.parentNode.parentNode).css( "background-color" );
     var note_title = $(".note-new-title > h4").text();
     var note_description = $(".note-new-default").text();
     if (note_title === "Add Note Title") {
@@ -192,7 +193,7 @@ $(function() {
     }
     console.log("user_id, note_id, note_title, note_description", user_id, note_id, note_title, note_description);
     if (note_title !== "" || note_description !== "") {
-      send_note(user_id, note_id, note_title, note_description);
+      send_note(user_id, note_id, note_title, note_description, note_colour);
     }
     set_new_note();
   });
@@ -209,8 +210,11 @@ $(function() {
               },
               method: 'POST',
               success: function() {
-                MAIN.set('notes_dict.' + note_id + '.note_colour', rgba);
-                console.log("saved: "+rgba+" to server");
+                var notes_dict = MAIN.get('notes_dict');
+                if(typeof notes_dict.note_id !== 'undefined'){
+                  MAIN.set('notes_dict.' + note_id + '.note_colour', rgba);
+                  console.log("saved: "+rgba+" to server");
+                };
               },
               error: function() {
                 alert("Could not change colour to server");
@@ -221,7 +225,7 @@ $(function() {
 
 
 
-  function send_note(user_id, note_id, note_title, note_description) {
+  function send_note(user_id, note_id, note_title, note_description, note_colour) {
     var note_time_js = new Date().getTime();
     $.ajax("{{=URL('default', 'add_note', user_signature=True)}}",
             {
@@ -230,7 +234,8 @@ $(function() {
                 note_id: note_id,
                 note_title: note_title,
                 note_description: note_description,
-                note_time: note_time_js
+                note_time: note_time_js,
+                note_colour: note_colour
               },
               method: 'POST',
               success: function() {
