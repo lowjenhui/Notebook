@@ -39,9 +39,9 @@ db.define_table('note_comments',
     Field('note_author', db.auth_user, default=auth.user_id),
     Field('note_content'))
 
-db.define_table('permissions',
+db.define_table('shared_notes',
     Field('note_id'),
-    Field('note_author', db.auth_user, default=auth.user_id))
+    Field('shared_author', db.auth_user))
 
 db.define_table('tags',
     Field('note_id'),
