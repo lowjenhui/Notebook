@@ -21,12 +21,15 @@ def index():
 @auth.requires_login()
 def load_notes():
     """Loads all notes by or shared to the current user."""
-    note_list = db((db.notes.note_author==auth.user_id) | (db.shared_notes.shared_author==auth.user_id)).select(
-        db.notes.ALL, left=db.shared_notes.on(db.notes.note_id==db.shared_notes.note_id))
+    note_list = db(
+        (db.notes.note_author==auth.user_id) | 
+        (db.notes.note_shared_authors.contains(auth.user_id))).select(
+        db.notes.ALL)
     notes_dict = {}
     for n in note_list:
         notes_dict[n.note_id] = {
             'note_author': n.note_author,
+            'note_shared_authors': [sa.email for sa in n.note_shared_authors or []],
             'note_time': python_utctime_to_js(n.note_time),
             'note_title': n.note_title,
             'note_description': n.note_description,

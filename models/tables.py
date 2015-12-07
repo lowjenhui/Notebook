@@ -26,6 +26,7 @@ db.define_table('notes',
     Field('note_image_url'),
     Field('note_list'),
     Field('note_author', db.auth_user, default=auth.user_id),
+    Field('note_shared_authors', 'list:reference auth_user'),
     Field('note_colour'),
     Field('note_size'))
 
@@ -38,10 +39,6 @@ db.define_table('note_comments',
     Field('note_time', 'datetime'),
     Field('note_author', db.auth_user, default=auth.user_id),
     Field('note_content'))
-
-db.define_table('shared_notes',
-    Field('note_id'),
-    Field('shared_author', db.auth_user))
 
 db.define_table('tags',
     Field('note_id'),
