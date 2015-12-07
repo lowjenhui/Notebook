@@ -18,9 +18,10 @@ def index():
     note_id_new = gluon_utils.web2py_uuid()
     return dict(note_id_new=note_id_new, user_id=user_id)
 
-@auth.requires_login()
 def load_notes():
     """Loads all notes by or shared to the current user."""
+    if (auth.user_id is None):
+        return
     note_list = db(
         (db.notes.note_author==auth.user_id) | 
         (db.notes.note_shared_authors.contains(auth.user_id))).select(
