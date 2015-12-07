@@ -54,6 +54,13 @@ def add_note():
     return "ok"
 
 @auth.requires_signature()
+def change_colour_note():
+    db.notes.update_or_insert((db.notes.note_id == request.vars.note_id),
+            note_id=request.vars.note_id,
+            note_colour=request.vars.note_colour)
+    return "ok"
+
+@auth.requires_signature()
 def delete_note():
     note_id = request.vars.note_id
     db(db.notes.note_id == note_id).delete()

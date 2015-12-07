@@ -36,7 +36,7 @@
       <div class="note-new-default" style="border: blue 1px solid; padding: 20px 10px;" contenteditable="true" on-keydown="note-new-edit"> Add Note </div>
       <div class="note-buttons">
           <i class="fa fa-user-plus"></i>
-          <i class="fa fa-paint-brush"></i>
+          <i class="fa fa-paint-brush change-color"></i>
           <i class="fa fa-tag"></i>
       </div>
       <input id="new_board_done" class="btn btn-primary" type="submit" value="Submit" on-click="note_submit"/>
@@ -46,7 +46,7 @@
 
 <div class="notes_list">
   {% #notes_dict:note_index %}
-    <div class="note-item" data-author="" data-noteid="{% note_index %}" style="border: purple 1px solid; margin: 10px 0px;">
+    <div class="note-item" data-author="" data-noteid="{% note_index %}" style="border: purple 1px solid; margin: 10px 0px; background-color: {% note_colour %}">
   		<div class="note-favourite"><i class="fa fa-heart"></i></div>
     	<h3 class="note-title">{% note_title %}</h3>
     	<h5 class="note-description">{% note_description %}</h5>
@@ -55,7 +55,7 @@
     	<div class="note-tags"></div>
     	<div class="note-buttons" style="display: auto">
         	<i class="fa fa-user-plus"></i>
-        	<i class="fa fa-paint-brush"></i>
+        	<i class="fa fa-paint-brush change-color" on-click="note_change_color"></i>
         	<i class="fa fa-tag"></i>
         	<i class="fa fa-trash" on-click="note_delete"></i>
           <span>{% returnDate( note_time ) %}</span>
@@ -78,7 +78,7 @@
     	<div class="note-tags"></div>
     	<div class="note-buttons">
         <i class="fa fa-user-plus"></i>
-        <i class="fa fa-paint-brush"></i>
+        <i class="fa fa-paint-brush change-color"></i>
         <i class="fa fa-tag"></i>
         <i class="fa fa-trash"></i>
   		</div>
@@ -114,9 +114,19 @@ $(function() {
             method: 'POST',
             success: function (data) {
               MAIN.set('notes_dict', data['notes_dict']);
+              refreshColourPicker();
             }
           }
     );
+  }
+
+  function refreshColourPicker() {
+    $(".change-color").colorpicker({
+                align: 'left'
+              }).on('changeColor.colorpicker', function(e){
+                update_colour(e.currentTarget.parentNode.parentNode,
+                              e.color.toRGB());
+              });
   }
 
   function returnDate(note_time) {
@@ -187,6 +197,30 @@ $(function() {
     set_new_note();
   });
 
+  function update_colour(note_element, colour_hash) {
+    var note_id = $(note_element).data('noteid');
+    var rgba = 'rgba('+colour_hash.r+','+colour_hash.g+','+colour_hash.b+','+colour_hash.a+')';
+    $(note_element).css('background-color', rgba);
+    $.ajax("{{=URL('default', 'change_colour_note', user_signature=True)}}",
+            {
+              data: {
+                note_id: note_id,
+                note_colour: rgba
+              },
+              method: 'POST',
+              success: function() {
+                MAIN.set('notes_dict.' + note_id + '.note_colour', rgba);
+                console.log("saved: "+rgba+" to server");
+              },
+              error: function() {
+                alert("Could not change colour to server");
+              }
+            }
+    );
+  }
+
+
+
   function send_note(user_id, note_id, note_title, note_description) {
     var note_time_js = new Date().getTime();
     $.ajax("{{=URL('default', 'add_note', user_signature=True)}}",
@@ -206,6 +240,8 @@ $(function() {
                   note_title: note_title,
                   note_description: note_description
                 });
+                refreshColourPicker();
+
                 console.log("saved: "+note_title+" to server");
               },
               error: function() {
@@ -234,7 +270,6 @@ $(function() {
               }
             });
   });
-
  });
 
  </script>
