@@ -19,7 +19,7 @@ from datetime import datetime
 
 # Here is a table for boards.
 db.define_table('notes',
-    Field('note_id'),
+    Field('note_id', default=lambda:gluon.utils.web2py_uuid()),
     Field('note_title', required=True),
     Field('note_time_js', 'integer'),
     Field('note_time', 'datetime'),
