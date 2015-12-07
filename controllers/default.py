@@ -26,8 +26,7 @@ def load_notes():
         notes_dict[n.note_id] = {
             'note_author': n.note_author,
             'note_title': n.note_title,
-            'note_time_js': n.note_time_js,
-            'note_time': n.note_time,
+            'note_time': python_utctime_to_js(n.note_time),
             'note_description': n.note_description,
             'note_image_url': n.note_image_url,
             'note_list': n.note_list,
@@ -37,6 +36,10 @@ def load_notes():
 
 def js_to_python_utctime(js_time_stamp):
     return datetime.utcfromtimestamp(int(js_time_stamp)/1000)
+
+def python_utctime_to_js(utctime):
+    delta = utctime - datetime(1970, 1, 1)
+    return delta.microseconds + (delta.seconds + delta.days * 24 * 3600) * 10**6
 
 def user():
     """
