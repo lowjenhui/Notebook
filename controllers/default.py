@@ -59,7 +59,7 @@ def add_note():
 @auth.requires_signature()
 def delete_note():
     note_id = request.vars.note_id
-    db(db.notes.note_id == note_id).delete()
+    db((db.notes.note_id == note_id) & (db.notes.note_author == auth.user_id)).delete()
     return "ok"
 
 def user():

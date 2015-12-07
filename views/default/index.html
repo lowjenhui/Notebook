@@ -57,7 +57,9 @@
         	<i class="fa fa-user-plus"></i>
         	<i class="fa fa-paint-brush"></i>
         	<i class="fa fa-tag"></i>
+          {% #if note_author == user_id %}
         	<i class="fa fa-trash" on-click="note_delete"></i>
+          {% /if %}
           <span>{% returnDate( note_time ) %}</span>
   	  </div>
   		<div class="note-authors"></div>
@@ -217,6 +219,9 @@ $(function() {
 
   MAIN.on("note_delete", function(e) {
     var note_id = $(e.node.parentNode.parentNode).data('noteid');
+    if (MAIN.get("user_id") != MAIN.get("notes_dict." + note_id + ".note_author")) {
+      return;
+    }
     $.ajax("{{=URL('default', 'delete_note', user_signature=True)}}",
             {
               data: {
