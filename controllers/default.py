@@ -20,12 +20,11 @@ def index():
 
 def load_notes():
     """Loads all notes by or shared to the current user."""
-    if (auth.user_id is None):
+    if auth.user_id is None:
         return
     note_list = db(
         (db.notes.note_author==auth.user_id) | 
-        (db.notes.note_shared_authors.contains(auth.user_id))).select(
-        db.notes.ALL)
+        (db.notes.note_shared_authors.contains(auth.user_id))).select()
     notes_dict = {}
     for n in note_list:
         notes_dict[n.note_id] = {
@@ -62,6 +61,28 @@ def delete_note():
     note_id = request.vars.note_id
     db((db.notes.note_id == note_id) & (db.notes.note_author == auth.user_id)).delete()
     return "ok"
+
+@auth.requires_signature()
+def add_shared_author():
+    note = db((db.notes.note_id == request.vars.note_id) & (db.notes.note_author == auth.user_id)).select().first()
+    if note is None:
+        raise 'No permission to edit note sharing'
+    new_author = db(db.auth_user.email == request.vars.new_author).select().first()
+    if new_author is None:
+        raise 'No user ' + request.vars.new_author
+    if note.note_shared_authors.contains(new_author):
+        raise 'Already sharing with ' + request.vars.new_author
+    note.update_record(note_shared_authors = note.note_shared_authors.extend([new_author]))
+
+@auth.requires_signature()
+def remove_shared_author():
+    note = db((db.notes.note_id == request.vars.note_id) & (db.notes.note_author == auth.user_id)).select().first()
+    if note is None:
+        raise 'No permission to edit note sharing'
+    removed_author = db(db.auth_user.email == request.vars.removed_author).select().first()
+    if removed_author is None:
+        raise 'No user ' + request.vars.removed_author
+    note.update_record(note_shared_authors = [sa for sa in note.note_shared_authors if sa != removed_author))
 
 def user():
     """
