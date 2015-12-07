@@ -38,7 +38,6 @@
           <i class="fa fa-user-plus"></i>
           <i class="fa fa-paint-brush"></i>
           <i class="fa fa-tag"></i>
-          <i class="fa fa-trash"></i>
       </div>
       <input id="new_board_done" class="btn btn-primary" type="submit" value="Submit" on-click="note_submit"/>
       <button id="new_post_cancel_button" class="btn btn-default" on-click="note_new_cancel">Cancel</button>
@@ -58,7 +57,7 @@
         	<i class="fa fa-user-plus"></i>
         	<i class="fa fa-paint-brush"></i>
         	<i class="fa fa-tag"></i>
-        	<i class="fa fa-trash"></i>
+        	<i class="fa fa-trash" on-click="note_delete"></i>
           <span>{% returnDate( note_time ) %}</span>
   	  </div>
   		<div class="note-authors"></div>
@@ -176,8 +175,16 @@ $(function() {
     var note_id = $(e.node.parentNode.parentNode).data('noteid');
     var note_title = $(".note-new-title > h4").text();
     var note_description = $(".note-new-default").text();
+    if (note_title === "Add Note Title") {
+      note_title = "";
+    } if (note_description == "Add Note") {
+      note_description = "";
+    }
     console.log("user_id, note_id, note_title, note_description", user_id, note_id, note_title, note_description);
+    if (note_title !== "" || note_description !== "") {
       send_note(user_id, note_id, note_title, note_description);
+    }
+    set_new_note();
   });
 
   function send_note(user_id, note_id, note_title, note_description) {
@@ -200,7 +207,6 @@ $(function() {
                   note_description: note_description
                 });
                 console.log("saved: "+note_title+" to server");
-                set_new_note();
               },
               error: function() {
                 alert("Could not save note to server");
@@ -208,6 +214,26 @@ $(function() {
             }
     );
   }
+
+  MAIN.on("note_delete", function(e) {
+    var note_id = $(e.node.parentNode.parentNode).data('noteid');
+    $.ajax("{{=URL('default', 'delete_note', user_signature=True)}}",
+            {
+              data: {
+                note_id: note_id
+              },
+              method: 'POST',
+              success: function() {
+                var notes_dict = MAIN.get('notes_dict');
+                delete notes_dict[note_id];
+                MAIN.set('notes_dict', notes_dict);
+                console.log("deleted to server");
+              },
+              error: function() {
+                alert("Could not delete to server");
+              }
+            });
+  });
 
  });
 
