@@ -56,6 +56,12 @@ def add_note():
             note_description=request.vars.note_description)
     return "ok"
 
+@auth.requires_signature()
+def delete_note():
+    note_id = request.vars.note_id
+    db(db.notes.note_id == note_id).delete()
+    return "ok"
+
 def user():
     """
     exposes:
