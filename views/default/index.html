@@ -3,6 +3,32 @@
 
 <div id="target"></div>
 
+<!-- Sharing Modal -->
+<div class="modal fade" id="sharing-modal" role="dialog">
+  <div class="modal-dialog">
+
+    <!-- Modal content-->
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">Sharing "<span class="share-note-title"></span>"</h4>
+        <h5>Author: <span class="share-note-author"></span></h5>
+      </div>
+      <div class="modal-body">
+        <h5>Shared with:</h5>
+        <div class="share-note-authors">
+        </div>
+        <h5 class="text-danger share-note-error"></h5>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
 <script id="template" type="text/ractive">
 <div class="title">
   <h1>Note Book</h1>
@@ -54,7 +80,7 @@
     	<img class="note-img" src="{% note_image_url %}"/>
     	<div class="note-tags"></div>
     	<div class="note-buttons" style="display: auto">
-        	<i class="fa fa-user-plus"></i>
+        	<i class="fa fa-user-plus" on-click="manage_sharing"></i>
         	<i class="fa fa-paint-brush"></i>
         	<i class="fa fa-tag"></i>
           {% #if note_author == user_id %}
@@ -238,6 +264,112 @@ $(function() {
                 alert("Could not delete to server");
               }
             });
+  });
+
+  function update_sharing_prompt(note_id) {
+    var editable = MAIN.get("user_id") == MAIN.get("notes_dict." + note_id + ".note_author");
+    var new_author_placeholder = 'New Author';
+    var add_url = "{{=URL('default', 'add_shared_author', user_signature=True)}}"
+    var remove_url = "{{=URL('default', 'remove_shared_author', user_signature=True)}}"
+    var shared_authors = MAIN.get("notes_dict." + note_id + ".note_shared_authors");
+    $("#sharing-modal .share-note-title").text(MAIN.get("notes_dict." + note_id + ".note_title"));
+    $("#sharing-modal .share-note-author").text(MAIN.get("notes_dict." + note_id + ".note_author_email"));
+    $("#sharing-modal .share-note-authors").empty();
+    var error_node = $("#sharing-modal .share-note-error").hide(0);
+    function remove_handler(removed_author) {
+      return function() {
+        var entry_row = $("#sharing-modal .share-note-authors [data-shared-author='" + removed_author + "']");
+        var entry_button = $("button", entry_row);
+        if (entry_button.prop("disabled")) {
+          return;
+        }
+        error_node.hide("fast");
+        entry_button.prop("disabled", true);
+        $.ajax(remove_url, {
+          data: {
+            note_id: note_id,
+            removed_author: removed_author
+          },
+          method: "POST",
+          success: function() {
+            entry_row.hide(function() { entry_row.remove(); });
+          },
+          error: function(xhr) {
+            error_node.text(xhr.responseText).show("fast");
+            entry_button.prop("disabled", false);
+          }
+        })
+      }
+    }
+    function add_handler() {
+      return function() {
+        var entry_row = $("#sharing-modal .share-note-authors [data-shared-author='']");
+        var entry_input = $("[contenteditable='true']", entry_row);
+        var entry_button = $("button", entry_row);
+        if (entry_button.prop("disabled")) {
+          return;
+        }
+        error_node.hide("fast");
+        entry_button.prop("disabled", true);
+        var new_author = entry_input.text();
+        $.ajax(add_url, {
+          data: {
+            note_id: note_id,
+            new_author: new_author
+          },
+          method: "POST",
+          success: function() {
+            entry_input.text(new_author_placeholder);
+            entry_button.prop("disabled", false);
+            add_SA_row(new_author, entry_row);
+          },
+          error: function(xhr) {
+            error_node.text(xhr.responseText).show("fast");
+            entry_button.prop("disabled", false);
+          }
+        })
+      }
+    }
+    function add_SA_row(SA, before_row) {
+      var adding = SA === undefined;
+      var text = adding ? new_author_placeholder : SA;
+      var id = adding ? "" : SA;
+      var text_focus_handler = adding ? function(e) { $(e.currentTarget).text(""); } : null;
+      var text_blur_handler = adding ? function(e) {
+        if ($(e.currentTarget).text() === "") {
+          $(e.currentTarget).text(new_author_placeholder);
+        }
+      } : null;
+      var button_handler = adding ?  add_handler() : remove_handler(SA);
+      var button_text = adding ? "Add" : "Delete"
+      var button_class = adding ? "btn-primary" : "btn-danger";
+      var row = $("<div>").addClass("row").attr("data-shared-author", id).append(
+        $("<div>").addClass("col-md-10").text(text).attr('contenteditable', adding).keydown(function(e) {
+          if (e.which == 13 && adding) {
+            e.preventDefault();
+            button_handler();
+          }
+        }).focus(text_focus_handler).blur(text_blur_handler));
+      if (editable) {
+        row.append($("<div>").addClass("col-md-2").append(
+          $("<button>").addClass("btn").addClass(button_class).addClass("text-right").text(button_text).click(button_handler)));
+      }
+      if (before_row) {
+        $(row).insertBefore(before_row);
+      } else {
+        $("#sharing-modal .share-note-authors").append(row);
+      }
+      return row;
+    }
+    for (var i = 0; i <= shared_authors.length - (editable ? 0 : 1); ++i) {
+      add_SA_row(i == shared_authors.length ? undefined : shared_authors[i]);
+    }
+  }
+
+  MAIN.on("manage_sharing", function(e) {
+    var note_id = $(e.node.parentNode.parentNode).data("noteid");
+    update_sharing_prompt(note_id);
+    $("#sharing-modal").modal("toggle");
   });
 
  });

@@ -29,6 +29,7 @@ def load_notes():
     for n in note_list:
         notes_dict[n.note_id] = {
             'note_author': n.note_author,
+            'note_author_email': n.note_author.email,
             'note_shared_authors': [sa.email for sa in n.note_shared_authors or []],
             'note_time': python_utctime_to_js(n.note_time),
             'note_title': n.note_title,
@@ -66,23 +67,24 @@ def delete_note():
 def add_shared_author():
     note = db((db.notes.note_id == request.vars.note_id) & (db.notes.note_author == auth.user_id)).select().first()
     if note is None:
-        raise 'No permission to edit note sharing'
+        raise HTTP(400, 'No permission to edit note sharing')
     new_author = db(db.auth_user.email == request.vars.new_author).select().first()
     if new_author is None:
-        raise 'No user ' + request.vars.new_author
-    if note.note_shared_authors.contains(new_author):
-        raise 'Already sharing with ' + request.vars.new_author
-    note.update_record(note_shared_authors = note.note_shared_authors.extend([new_author]))
+        raise HTTP(400, 'No user ' + request.vars.new_author)
+    if new_author.id in note.note_shared_authors:
+        raise HTTP(400, 'Already sharing with ' + request.vars.new_author)
+    note.note_shared_authors.append(new_author.id)
+    note.update_record()
 
 @auth.requires_signature()
 def remove_shared_author():
     note = db((db.notes.note_id == request.vars.note_id) & (db.notes.note_author == auth.user_id)).select().first()
     if note is None:
-        raise 'No permission to edit note sharing'
+        raise HTTP(400, 'No permission to edit note sharing')
     removed_author = db(db.auth_user.email == request.vars.removed_author).select().first()
     if removed_author is None:
-        raise 'No user ' + request.vars.removed_author
-    note.update_record(note_shared_authors = [sa for sa in note.note_shared_authors if sa != removed_author))
+        raise HTTP(400, 'No user ' + request.vars.removed_author)
+    note.update_record(note_shared_authors = [sa for sa in note.note_shared_authors if sa.id != removed_author.id])
 
 def user():
     """
