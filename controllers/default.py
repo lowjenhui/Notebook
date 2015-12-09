@@ -11,6 +11,7 @@
 from gluon import utils as gluon_utils
 from datetime import datetime
 import json
+import re
 import time
 
 def index():
@@ -22,22 +23,33 @@ def load_notes():
     """Loads all notes by or shared to the current user."""
     if auth.user_id is None:
         return
-    note_list = db(
-        (db.notes.note_author==auth.user_id) | 
-        (db.notes.note_shared_authors.contains(auth.user_id))).select()
+    query = (db.notes.note_author == auth.user_id) | (db.notes.note_shared_authors.contains(auth.user_id))
+    search_terms = "/".join(request.args[1:]).split(" ") if request.args and request.args[0] == "search" else None
+    if search_terms is not None:
+        regex = "(" + "|".join([re.escape(term) for term in search_terms]) + ")"
+        query &= (db.notes.note_title.regexp(regex)) | (db.notes.note_description.regexp(regex)) | (db.tags.tag.belongs(search_terms))
+    results = db(query).select(
+        db.notes.ALL,
+        db.tags.tag,
+        left=db.tags.on(db.notes.note_id == db.tags.note_id))
     notes_dict = {}
-    for n in note_list:
-        notes_dict[n.note_id] = {
-            'note_author': n.note_author,
-            'note_author_email': n.note_author.email,
-            'note_shared_authors': [sa.email for sa in n.note_shared_authors or []],
-            'note_time': python_utctime_to_js(n.note_time),
-            'note_title': n.note_title,
-            'note_description': n.note_description,
-            'note_image_url': n.note_image_url,
-            'note_list': n.note_list,
-            'note_colour': n.note_colour,
-            'note_size': n.note_size}
+    for row in results:
+        n = row.notes
+        if n.note_id not in notes_dict:
+            notes_dict[n.note_id] = {
+                'note_author': n.note_author,
+                'note_author_email': n.note_author.email,
+                'note_shared_authors': [sa.email for sa in n.note_shared_authors or []],
+                'note_time': python_utctime_to_js(n.note_time),
+                'note_title': n.note_title,
+                'note_description': n.note_description,
+                'note_image_url': n.note_image_url,
+                'note_list': n.note_list,
+                'note_colour': n.note_colour,
+                'note_size': n.note_size,
+                'note_tags': [row.tags.tag] if row.tags.tag else []}
+        else:
+            notes_dict[n.note_id].note_tags.append(row.tags.tag)
     return response.json(dict(notes_dict=notes_dict))
 
 def js_to_python_utctime(js_time_stamp):
