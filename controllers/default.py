@@ -13,11 +13,33 @@ from datetime import datetime
 import json
 import re
 import time
+import os
+import shutil
+import cgi
 
 def index():
     user_id = auth.user_id
     note_id_new = gluon_utils.web2py_uuid()
     return dict(note_id_new=note_id_new, user_id=user_id)
+
+def add_image():
+    fileitem = request.vars.file
+    print fileitem
+    if not fileitem.file: return
+
+    outpath = os.path.join(request.folder, "static\images", fileitem.filename)
+    print outpath
+    with open(outpath, 'wb') as fout:
+        shutil.copyfileobj(fileitem.file, fout, 100000)
+    print request.vars
+    db.notes.update_or_insert((db.notes.note_id == request.vars.note_id),
+            note_id=request.vars.note_id,
+            note_author=request.vars.note_author,
+            note_time=js_to_python_utctime(request.vars.note_time),
+            note_title=request.vars.note_title,
+            note_colour=request.vars.note_colour,
+            note_image_url=(URL('static\images', fileitem.filename)))
+    return (URL('static\images', fileitem.filename))
 
 def load_notes():
     """Loads all notes by or shared to the current user."""
