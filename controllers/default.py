@@ -78,10 +78,11 @@ def add_shared_author():
     new_author = db(db.auth_user.email == request.vars.new_author).select().first()
     if new_author is None:
         raise HTTP(400, 'No user ' + request.vars.new_author)
-    if new_author.id in note.note_shared_authors:
+    shared_authors = note.note_shared_authors or []
+    if new_author.id in shared_authors:
         raise HTTP(400, 'Already sharing with ' + request.vars.new_author)
-    note.note_shared_authors.append(new_author.id)
-    note.update_record()
+    shared_authors.append(new_author.id)
+    note.update_record(note_shared_authors = shared_authors)
 
 @auth.requires_signature()
 def remove_shared_author():
