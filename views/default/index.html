@@ -138,7 +138,9 @@ $(function() {
   // Loads the initial list of messages.
   function load_notes() {
     var search_prefix = "{{=URL(args=['search'])}}/";
-    var query = location.href.indexOf(search_prefix) === -1 ? "" : location.href.substr(location.href.indexOf(search_prefix) + search_prefix.length);
+    var prefix_loc = location.href.indexOf(search_prefix);
+    var query = prefix_loc === -1 ? "" :
+        decodeURIComponent(location.href.substr(prefix_loc + search_prefix.length));
     $(".search input").val(query);
     $.ajax("{{=URL('default', 'load_notes')}}",
           {
