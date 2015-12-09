@@ -137,8 +137,12 @@ $(function() {
 
   // Loads the initial list of messages.
   function load_notes() {
+    var search_prefix = "{{=URL(args=['search'])}}/";
+    var query = location.href.indexOf(search_prefix) === -1 ? "" : location.href.substr(location.href.indexOf(search_prefix) + search_prefix.length);
+    $(".search input").val(query);
     $.ajax("{{=URL('default', 'load_notes')}}",
           {
+            data: query ? {query: query} : undefined,
             method: 'POST',
             success: function (data) {
               MAIN.set('notes_dict', data['notes_dict']);
@@ -402,6 +406,24 @@ $(function() {
       add_SA_row(i == num_shared_authors ? undefined : shared_authors[i]);
     }
   }
+
+  function perform_search() {
+    var query = $(".search input").val();
+    if (query) {
+      history.pushState(null, 'Searching for ' + query, "{{=URL(args=['search'])}}/" + query);
+    } else {
+      history.pushState(null, '', "{{=URL()}}");
+    }
+    load_notes();
+  }
+
+  $(".search button").click(perform_search);
+  $(".search input").keydown(function(e) {
+    if (e.which == 13) {
+      perform_search();
+    }
+  });
+  $(window).on('popstate', load_notes);
 
   MAIN.on("note_manage_sharing", function(e) {
     var note_id = $(e.node.parentNode.parentNode).data("noteid");
