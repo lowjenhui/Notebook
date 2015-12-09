@@ -402,8 +402,9 @@ $(function() {
       }
       return row;
     }
-    for (var i = 0; i <= shared_authors.length - (editable ? 0 : 1); ++i) {
-      add_SA_row(i == shared_authors.length ? undefined : shared_authors[i]);
+    num_shared_authors = shared_authors ? shared_authors.length : 0;
+    for (var i = 0; i <= num_shared_authors - (editable ? 0 : 1); ++i) {
+      add_SA_row(i == num_shared_authors ? undefined : shared_authors[i]);
     }
   }
 
