@@ -33,6 +33,16 @@ def add_image():
             note_image=request.vars.file)
     return (URL('download', args=db(db.notes.note_id == request.vars.note_id).select(db.notes.note_image).first().note_image))
 
+def edit_image_note():
+    db.notes.update_or_insert((db.notes.note_id == request.vars.note_id),
+            note_id=request.vars.note_id,
+            note_author=request.vars.note_author,
+            note_time=js_to_python_utctime(request.vars.note_time),
+            note_title=request.vars.note_title,
+            note_colour=request.vars.note_colour,
+            note_image=request.vars.note_image)
+    return "ok"
+
 def load_notes():
     """Loads all notes by or shared to the current user."""
     if auth.user_id is None:

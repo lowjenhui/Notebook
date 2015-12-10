@@ -65,10 +65,10 @@
         </div>
       </div>
       <div class="note-new-body" style="display: none;">
-        <div class="note-new-title" style="padding: 2px 10px;" contenteditable="true">
+        <div class="note-new-title helper-text" style="padding: 2px 10px;" contenteditable="true">
           <h4> Add Note Title </h4>
         </div>
-        <div class="note-new-default" style="border: blue 1px solid; padding: 20px 10px; display:none;" contenteditable="true" on-keydown="note-new-edit"> Add Note </div>
+        <div class="note-new-default helper-text" style="border: blue 1px solid; padding: 20px 10px; display:none;" contenteditable="true"> Add Note </div>
         <div id="dropzonebox" class="dropzone dropzonebox" style="display: none;"></div>
         <div class="note-buttons">
             <i class="fa fa-user-plus"></i>
@@ -86,8 +86,8 @@
 <div class="notes_list masonry">
   {% #notes_dict:note_index %}
     <div class="note-item item" data-author="" data-noteid="{% note_index %}" style=" margin: 10px 0px; background-color: {% note_colour %}" on-hover="show_buttons">
-    	<h3 class="note-title" contenteditable="false" on-blur="edit_finish">{% note_title %}</h3>
-    	<h5 class="note-description" contenteditable="false">{% note_description %}</h5>
+    	<h3 class="note-title" contenteditable="false" on-focus="note_edit" on-blur="edit_finish">{% note_title %}</h3>
+    	<h5 class="note-description" contenteditable="false" on-focus="note_edit" on-blur="edit_finish">{% note_description %}</h5>
       <div class="note-img-container" style="text-align:center; padding-bottom:5px;">
       	<img class="note-img" src="{% note_image_url %}" style="max-width:100%; max-height:100%; vertical-align: middle;"/>
       </div>
@@ -107,11 +107,15 @@
             <div class="dropdown-menu label-menu" style="padding:10px">
               <li>
                 <div class="add-label" contenteditable="true">Enter label name</div>
+                <input class="tag-input" placeholder="What needs to be done?" value="">
               </li>
               <input class="btn btn-primary" type="submit" value="Submit" on-click="send_tag"/>
               <li role="separator" class="divider"></li>
               {% #note_tags %}
-                <li><input type="checkbox" checked on-click="remove_tag">{% . %}</li>
+                <li class="tag-list">
+                  <!--input type="checkbox" class="tag-checkbox" checked /-->
+                  <span class="tag">{% . %}</span>
+                  <span class="close-button" on-click="remove_tag">x</span></li>
               {% /note_tags %}
             </div>
           </div>
@@ -181,7 +185,7 @@ $(function() {
       $(".note-buttons", ancestor).show();
       $('.note-title', ancestor).attr("contenteditable", "true");
       if ($('.note-title', ancestor).text() == "") {
-        $('.note-title', ancestor).addClass( "helper-text" ).text("Add note title here");
+        $('.note-title', ancestor).addClass( "helper-text" ).text("Add Note Title");
       }
       if ($('.note-img', ancestor).attr("src") == "") {
         $('.note-description', ancestor).attr("contenteditable", "true");
@@ -195,7 +199,7 @@ $(function() {
       $('.note-title', ancestor).attr("contenteditable", "false");
       $('.note-title', ancestor).removeClass( "helper-text" );
       $('.note-description', ancestor).removeClass( "helper-text" );
-      if ($('.note-title', ancestor).text() == "Add note title here") {
+      if ($('.note-title', ancestor).text() == "Add Note Title") {
         $('.note-title', ancestor).text("");
       }
       if ($('.note-img', ancestor).attr("src") == "") {
@@ -217,9 +221,43 @@ $(function() {
   MAIN.on("note_edit", function(e) {
     var ancestor = note_node(e.node);
     var note_id = note_node(e.node).data('noteid');
-    $('.note-title', ancestor).attr("contenteditable", "true");
-    if ($('.note-title', ancestor).text() == "") {
-      $('.note-title', ancestor).text("Add note title here");
+    if ($(e.node).hasClass("note-title")) {
+      if ($('.note-title', ancestor).text() == "Add Note Title") {
+        $('.note-title', ancestor).one( "keydown", function() {
+          $('.note-title', ancestor).removeClass( "helper-text" ).empty();
+        });
+      }
+    } else if ($(e.node).hasClass("note-description")) {
+      if ($('.note-description', ancestor).text() == "Add Note") {
+        $('.note-description', ancestor).one( "keydown", function() {
+          $('.note-description', ancestor).removeClass( "helper-text" ).empty();
+        });
+      }
+    }
+  });
+
+  MAIN.on("edit_finish", function(e) {
+    var user_id = MAIN.get("user_id");
+    var ancestor = note_node(e.node);
+    var note_id = ancestor.data('noteid');
+    var note_colour = $(ancestor.context).css( "background-color" );
+    var note_title = $('.note-title', ancestor).text();
+    var note_description = $('.note-description', ancestor).text();
+    if ($(e.node).hasClass("note-title")) {
+      if ((note_title == "") && (note_description == "Add Note") && ($('.note-img', ancestor).attr("src") == "")) {
+        note_delete(note_id);
+      } else if ($('.note-img', ancestor).attr("src") !== "") {
+        note_image_url = $('.note-img', ancestor).attr("src");
+        send_image_edits(user_id, note_id, note_title, note_colour, note_image_url);
+      } else {
+        send_note(user_id, note_id, note_title, note_description, note_colour);
+      }
+    } else if ($(e.node).hasClass("note-description")) {
+      if ((note_title == "Add Note") && (note_description == "") && ($('.note-img', ancestor).attr("src") == "")) {
+        note_delete(note_id);
+      } else {
+        send_note(user_id, note_id, note_title, note_description, note_colour);
+      }
     }
   })
 
@@ -314,10 +352,11 @@ $(function() {
     $(".note-new-bar").hide();
     MAIN.set('note_id_new', generateUUID());
     $( ".note-new-title" ).one( "keydown", function() {
+      $( ".note-new-title" ).removeClass( "helper-text" );
       $( ".note-new-title > h4" ).empty();
     });
     $( ".note-new-default" ).one( "keydown", function() {
-      $( ".note-new-default" ).empty();
+      $( ".note-new-default" ).removeClass( "helper-text" ).empty();
     });
   });
 
@@ -328,10 +367,8 @@ $(function() {
     $(".note-new-bar").hide();
     MAIN.set('note_id_new', generateUUID());
     $( ".note-new-title" ).one( "keydown", function() {
+      $( ".note-new-title" ).removeClass( "helper-text" );
       $( ".note-new-title > h4" ).empty();
-    });
-    $( ".note-new-default" ).one( "keydown", function() {
-      $( ".note-new-default" ).empty();
     });
   });
 
@@ -345,8 +382,8 @@ $(function() {
     $(".note-new-body").hide();
     $(".note-new-bar").show();
     MAIN.set('note_id_new', generateUUID());
-    $( ".note-new-title > h4" ).text("Add Note Title");
-    $( ".note-new-default" ).text("Add Note");
+    $( ".note-new-title > h4" ).addClass( "helper-text" ).text("Add Note Title");
+    $( ".note-new-default" ).addClass( "helper-text" ).text("Add Note");
     $(".new_note").css( "background-color","rgba(250,250,250,1)");
   }
 
@@ -360,7 +397,7 @@ $(function() {
     var note_description = $(".note-new-default").text();
     if (note_title === "Add Note Title") {
       note_title = "";
-    } if (note_description == "Add Note") {
+    } if (note_description === "Add Note") {
       note_description = "";
     }
     
@@ -382,7 +419,6 @@ $(function() {
                 update_colour(ancestor, e.color.toRGB());
               });
   }
-
 
   function update_colour(note_element, colour_hash) {
     var note_id = $(note_element).data('noteid');
@@ -411,6 +447,7 @@ $(function() {
 
   function send_note(user_id, note_id, note_title, note_description, note_colour) {
     var note_time_js = new Date().getTime();
+    console.log("sending note to server:", user_id, note_id, note_title, note_description, note_colour);
     $.ajax("{{=URL('default', 'add_note', user_signature=True)}}",
             {
               data: {
@@ -462,8 +499,45 @@ $(function() {
     myDropzone.processQueue();
   }
 
+  function send_image_edits(user_id, note_id, note_title, note_colour, note_image_url) {
+    console.log(user_id, note_id, note_title, note_colour, note_image_url);
+    var note_time_js = new Date().getTime();
+    $.ajax("{{=URL('default', 'edit_image_note', user_signature=True)}}",
+            {
+              data: {
+                note_author: user_id,
+                note_id: note_id,
+                note_title: note_title,
+                note_time: note_time_js,
+                note_colour: note_colour,
+                note_image: note_image_url
+              },
+              method: 'POST',
+              success: function() {
+                MAIN.set('notes_dict.' + note_id , {
+                  note_author: user_id,
+                  note_time: note_time_js,
+                  note_title: note_title,
+                  note_image_url: note_image_url,
+                  note_colour: note_colour
+                });
+                refreshColourPicker();
+
+                console.log("saved: "+note_title+" to server");
+              },
+              error: function() {
+                alert("Could not save note to server");
+              }
+            }
+    );
+  }
+
   MAIN.on("note_delete", function(e) {
-    var note_id = $(e.node.parentNode.parentNode).data('noteid');
+    var note_id = note_node(e.node).data('noteid');
+    note_delete(note_id);
+  });
+
+  function note_delete (note_id) {
     if (MAIN.get("user_id") != MAIN.get("notes_dict." + note_id + ".note_author")) {
       return;
     }
@@ -483,7 +557,7 @@ $(function() {
                 alert("Could not delete to server");
               }
             });
-  });
+  }
 
   function update_sharing_prompt(note_id) {
     var editable = MAIN.get("user_id") == MAIN.get("notes_dict." + note_id + ".note_author");
@@ -609,6 +683,16 @@ $(function() {
     update_sharing_prompt(note_id);
     $("#sharing-modal").modal("toggle");
   });
+
+  function returnDate(post_time_js) {
+    var date_object = new Date(parseInt(post_time_js));
+    var date = date_object.getDate();
+    var month = date_object.getMonth() + 1;
+    var year = date_object.getFullYear();
+    var time = date_object.toLocaleTimeString();
+    var prettyDate = date+"/"+month+"/"+year+" "+time;
+    return prettyDate;
+  }
 
  });
 
