@@ -27,7 +27,7 @@ db.define_table('notes',
     Field('note_list'),
     Field('note_author', db.auth_user, default=auth.user_id),
     Field('note_shared_authors', 'list:reference auth_user'),
-    Field('note_colour'),
+    Field('note_colour', default="rgba(250,250,250,1)"),
     Field('note_size'))
 
 db.notes.note_id.readable = db.notes.note_id.writable = False

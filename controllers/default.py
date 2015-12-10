@@ -22,6 +22,7 @@ def index():
     note_id_new = gluon_utils.web2py_uuid()
     return dict(note_id_new=note_id_new, user_id=user_id)
 
+@auth.requires_signature()
 def add_image():
     fileitem = request.vars.file
     print fileitem
@@ -71,7 +72,9 @@ def load_notes():
                 'note_size': n.note_size,
                 'note_tags': [row.tags.tag] if row.tags.tag else []}
         else:
-            notes_dict[n.note_id].note_tags.append(row.tags.tag)
+            print notes_dict[n.note_id]['note_tags']
+            notes_dict[n.note_id]['note_tags'].append(row.tags.tag)
+
     return response.json(dict(notes_dict=notes_dict))
 
 def js_to_python_utctime(js_time_stamp):
@@ -89,6 +92,20 @@ def add_note():
             note_time=js_to_python_utctime(request.vars.note_time),
             note_title=request.vars.note_title,
             note_description=request.vars.note_description)
+    return "ok"
+
+@auth.requires_signature()
+def add_tag():
+    db.tags.insert(
+            note_id=request.vars.note_id,
+            tag=request.vars.tag)
+    return "ok"
+
+@auth.requires_signature()
+def delete_tag():
+    note_id = request.vars.note_id
+    tag = request.vars.tag
+    db((db.tags.note_id == note_id) & (db.tags.tag == tag)).delete()
     return "ok"
 
 @auth.requires_signature()
