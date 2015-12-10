@@ -39,9 +39,13 @@ def load_notes():
         return
     query = (db.notes.note_author == auth.user_id) | (db.notes.note_shared_authors.contains(auth.user_id))
     search_terms = request.vars.query.split(" ") if request.vars.query else None
+    print search_terms
     if search_terms:
         regex = "(" + "|".join([re.escape(term) for term in search_terms]) + ")"
-        query &= (db.notes.note_title.regexp(regex)) | (db.notes.note_description.regexp(regex)) | (db.tags.tag.belongs(search_terms))
+        query &= ((db.notes.note_title.regexp(regex)) |
+            (db.notes.note_description.coalesce("''").regexp(regex)) |
+            (db.tags.tag.belongs(search_terms)))
+    print query
     results = db(query).select(
         db.notes.ALL,
         db.tags.tag,
