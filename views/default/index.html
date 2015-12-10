@@ -207,11 +207,11 @@ $(function() {
     }
   });
 
-  MAIN.on("send_label", function(e) {
+  MAIN.on("send_tag", function(e) {
     var note_id = note_node(e.node).data('noteid');
     var tag = $(".add-label", e.node.parentNode).text();
     var dropdown = $(e.node.parentNode.parentNode).dropdown("toggle");
-    send_label(note_id, tag);
+    send_tag(note_id, tag);
   });
 
   MAIN.on("note_edit", function(e) {
@@ -265,8 +265,9 @@ $(function() {
             },
             method: 'POST',
             success: function (data) {
-              var note_tags = MAIN.get("notes_dict." + note_id + ".note_tags", []);
-              console.log(note_tags);
+              var notes_dict = MAIN.get("notes_dict");
+              var note_tags = MAIN.get("notes_dict." + note_id + ".note_tags");
+              note_tags.push(tag);
               MAIN.set('notes_dict', notes_dict);    
             }
           }
