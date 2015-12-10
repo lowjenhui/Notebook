@@ -162,7 +162,8 @@ $(function() {
   var myDropzone = new Dropzone(".dropzonebox", {
     url: "{{=URL('default', 'add_image', user_signature=True)}}",
     autoProcessQueue: false,
-    maxFiles: 1
+    maxFiles: 1,
+    acceptedFiles: "image/*"
   })
 
   function refreshColourPicker() {

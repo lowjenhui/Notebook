@@ -23,23 +23,14 @@ def index():
     return dict(note_id_new=note_id_new, user_id=user_id)
 
 def add_image():
-    fileitem = request.vars.file
-    print fileitem
-    if not fileitem.file: return
-
-    outpath = os.path.join(request.folder, "static\images", fileitem.filename)
-    print outpath
-    with open(outpath, 'wb') as fout:
-        shutil.copyfileobj(fileitem.file, fout, 100000)
-    print request.vars
     db.notes.update_or_insert((db.notes.note_id == request.vars.note_id),
             note_id=request.vars.note_id,
             note_author=request.vars.note_author,
             note_time=js_to_python_utctime(request.vars.note_time),
             note_title=request.vars.note_title,
             note_colour=request.vars.note_colour,
-            note_image_url=(URL('static\images', fileitem.filename)))
-    return (URL('static\images', fileitem.filename))
+            note_image=request.vars.file)
+    return (URL('download', args=db(db.notes.note_id == request.vars.note_id).select(db.notes.note_image).first().note_image))
 
 def load_notes():
     """Loads all notes by or shared to the current user."""
@@ -65,7 +56,7 @@ def load_notes():
                 'note_time': python_utctime_to_js(n.note_time),
                 'note_title': n.note_title,
                 'note_description': n.note_description,
-                'note_image_url': n.note_image_url,
+                'note_image_url': URL('download', args=n.note_image) if n.note_image else None,
                 'note_list': n.note_list,
                 'note_colour': n.note_colour,
                 'note_size': n.note_size,
