@@ -70,11 +70,6 @@
         </div>
         <div class="note-new-default helper-text" style="border: blue 1px solid; padding: 20px 10px; display:none;" contenteditable="true"> Add Note </div>
         <div id="dropzonebox" class="dropzone dropzonebox" style="display: none;"></div>
-        <div class="note-buttons">
-            <i class="fa fa-user-plus"></i>
-            <i class="fa fa-paint-brush change-color"></i>
-            <i class="fa fa-tag"></i>
-        </div>
         <input class="btn btn-primary" type="submit" value="Submit" on-click="note_new_submit"/>
         <button id="new_post_cancel_button" class="btn btn-default" on-click="note_new_cancel">Cancel</button>
       </div>
@@ -93,29 +88,28 @@
       </div>
     	<div class="note-tags">
         {% #note_tags %}
-          <span data-tag="{% . %}">{% . %} </span>
+          <span data-tag="{% . %}">{% . %}</span>
         {% /note_tags %}
       </div>
     	<div class="note-buttons" style="display: none">
-        	<i class="fa fa-user-plus" on-click="note_manage_sharing"></i>
-        	<i class="fa fa-paint-brush change-color" on-click="note_change_color"></i>
+        	<i class="fa fa-user-plus fa-lg" on-click="note_manage_sharing"></i>
+        	<i class="fa fa-paint-brush fa-lg change-color" on-click="note_change_color"></i>
         	<div class="dropdown">
             <div class="btn btn-default dropdown-toggle" data-toggle="dropdown">
-              Label <i class="fa fa-tag"></i>
+              Tag <i class="fa fa-tag fa-lg"></i>
               <span class="caret"></span>
             </div>
             <div class="dropdown-menu label-menu" style="padding:10px">
               <li>
-                <div class="add-label" contenteditable="true">Enter label name</div>
-                <input class="tag-input" placeholder="What needs to be done?" value="">
+                <input class="tag-input" placeholder="Add Tag" value="" on-focus="add_enter_event">
               </li>
               <input class="btn btn-primary" type="submit" value="Submit" on-click="send_tag"/>
               <li role="separator" class="divider"></li>
               {% #note_tags %}
                 <li class="tag-list">
-                  <!--input type="checkbox" class="tag-checkbox" checked /-->
                   <span class="tag">{% . %}</span>
-                  <span class="close-button" on-click="remove_tag">x</span></li>
+                  <span class="close-button" on-click="remove_tag">x</span>
+                </li>
               {% /note_tags %}
             </div>
           </div>
@@ -213,9 +207,23 @@ $(function() {
 
   MAIN.on("send_tag", function(e) {
     var note_id = note_node(e.node).data('noteid');
-    var tag = $(".add-label", e.node.parentNode).text();
-    var dropdown = $(e.node.parentNode.parentNode).dropdown("toggle");
+    var tag = $(".tag-input", e.node.parentNode).val();
     send_tag(note_id, tag);
+  });
+
+  MAIN.on("add_enter_event", function(e) {
+    console.log(e);
+    $(".tag-input", e.node.parentNode).keydown(function(ev) {
+      console.log("keydown received", ev);
+      if (ev.which == 13) {
+        var note_id = note_node(ev.target.parentNode).data("noteid");
+        var tag = $(".tag-input", ev.target.parentNode).val();
+        console.log("parent", note_id, tag);
+        if (tag !== "") {
+          send_tag(note_id, tag);
+        }
+      }
+    });
   });
 
   MAIN.on("note_edit", function(e) {
@@ -270,7 +278,7 @@ $(function() {
 
   MAIN.on("remove_tag", function(e) {
     var note_id = note_node(e.node).data('noteid');
-    var tag = $(e.node.parentNode).text();
+    var tag = e.context;
     $(e.node.parentNode).remove();
     delete_tag(note_id, tag);
   });
@@ -306,7 +314,8 @@ $(function() {
               var notes_dict = MAIN.get("notes_dict");
               var note_tags = MAIN.get("notes_dict." + note_id + ".note_tags");
               note_tags.push(tag);
-              MAIN.set('notes_dict', notes_dict);    
+              MAIN.set('notes_dict', notes_dict);   
+              $(".tag-input").val(""); 
             }
           }
     );
