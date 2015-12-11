@@ -33,6 +33,7 @@
 
 <br>
 
+{% #if user_id != "None" %}
 <div class="row">
   <div class="col-md-9 title">
     <h1>The Notebook</h1>
@@ -48,57 +49,76 @@
       </div>
   </div>
 </div>
+{% /if %}
 
 <br>
 <br>
 
-
-<div class="row">
-  <div class="new_note col-md-6 col-md-offset-3" style="border: green 1px solid; background-color: rgba(250,250,250,1)" data-noteid="{% note_id_new %}">
-      <div class="note-new-bar">
-        <div class="note-new-note" style="display: inline-block; border: blue 1px solid; padding: 0px 10px;" on-click="note_new"> Add Note </div>
-      	<div class="note-new-list" style="display: inline-block;">
-          <i class="fa fa-list"></i>
-        </div>
-      	<div class="note-new-img" style="display: inline-block;">
-          <i class="fa fa-picture-o" on-click="note_new_img"></i>
-        </div>
-      </div>
-      <div class="note-new-body" style="display: none;">
-        <div class="note-new-title helper-text" style="padding: 2px 10px;" contenteditable="true">
-          <h4> Add Note Title </h4>
-        </div>
-        <div class="note-new-default helper-text" style="border: blue 1px solid; padding: 20px 10px; display:none;" contenteditable="true"> Add Note </div>
-        <div id="dropzonebox" class="dropzone dropzonebox" style="display: none;"></div>
-        <input class="btn btn-primary" type="submit" value="Submit" on-click="note_new_submit"/>
-        <button id="new_post_cancel_button" class="btn btn-default" on-click="note_new_cancel">Cancel</button>
-      </div>
+{% #if user_id == "None" %}
+  <div class="row header-buttons">
+    <div style="text-align:center vertical-align:middle">
+      <h1 style="margin:3rem 0rem 3rem 0rem;">The Notebook</h1>
+      <a href="{% sign_in %}" class="btn btn-warning btn-lg">Sign In</a>
+      <a href="{% sign_up %}" class="btn btn-success btn-lg">Sign Up</a>
+    </div>
   </div>
-</div>
+  <div class="row">
+    <div class="">
+      <img style="padding: 10px; display: block; margin: auto auto;
+    box-shadow: 0 2px 2px 0 rgba(0,0,0,0.14),0 3px 1px -2px rgba(0,0,0,0.2),0 1px 5px 0 rgba(0,0,0,0.12);" src="{% home %}"/>
+    </div>
+  </div>
+{% /if %}
 
+{% #if user_id != "None" %}
+  <div class="row">
+    <div class="new_note col-md-6 col-md-offset-3 add" style="background-color: rgba(250,250,250,1); text-align: center; padding: 12px 15px 15px 15px;" data-noteid="{% note_id_new %}">
+        <div class="note-new-bar">
+          <div class="note-new-note" style="display: inline-block; padding: 0px 10px;" on-click="note_new"> <h3> Add Note </h3></div>
+          <span> &nbsp;&nbsp; or &nbsp;&nbsp;&nbsp;&nbsp; </span>
+        	<div class="note-new-img" style="display: inline-block; padding: 0px 10px;"><i class="fa fa-picture-o fa-2x" on-click="note_new_img"></i>
+          </div>
+        </div>
+        <div class="note-new-body" style="display: none; text-align: left">
+          <div class="note-new-title helper-text" style="padding: 2px 10px;" contenteditable="true">
+            <h4> Add Note Title </h4>
+          </div>
+          <div class="note-new-default helper-text" style="margin: 0rem 2rem 2rem 0rem; padding: 20px 10px; display:none;" contenteditable="true"> Add Note </div>
+          <div id="dropzonebox" class="dropzone dropzonebox" style="margin: 2rem; display: none;"></div>
+          <input class="btn btn-primary" type="submit" value="Submit" on-click="note_new_submit"/>
+          <button id="new_post_cancel_button" class="btn btn-default" on-click="note_new_cancel">Cancel</button>
+        </div>
+    </div>
+  </div>
+{% /if %}
 <br>
 
 <div class="notes_list masonry">
+  {% #if loading %}
+    <div id="load_spinner">
+      <i class="fa fa-spinner fa-pulse fa-4x"></i>
+    </div>
+  {% /if %}
+
   {% #notes_dict:note_index %}
     <div class="note-item item" data-author="" data-noteid="{% note_index %}" style=" margin: 10px 0px; background-color: {% note_colour %}" on-hover="show_buttons">
-    	<h3 class="note-title" contenteditable="false" on-focus="note_edit" on-blur="edit_finish">{% note_title %}</h3>
-    	<h5 class="note-description" contenteditable="false" on-focus="note_edit" on-blur="edit_finish">{% note_description %}</h5>
+    	<h3 class="note-title" contenteditable="false" on-focus="note_edit" on-blur="edit_finish" style="
+    word-wrap: break-word;">{% note_title %}</h3>
+    	<h5 class="note-description" contenteditable="false" on-focus="note_edit" on-blur="edit_finish" style="
+    word-wrap: break-word;">{% note_description %}</h5>
       <div class="note-img-container" style="text-align:center; padding-bottom:5px;">
       	<img class="note-img" src="{% note_image_url %}" style="max-width:100%; max-height:100%; vertical-align: middle;"/>
       </div>
-    	<div class="note-tags">
+    	<div class="note-tags" style="text-align: right;">
         {% #note_tags %}
-          <span data-tag="{% . %}">{% . %}</span>
+          <div class="note-tag-x" data-tag="{% . %}">{% . %}</div>
         {% /note_tags %}
       </div>
     	<div class="note-buttons" style="display: none">
         	<i class="fa fa-user-plus fa-lg" on-click="note_manage_sharing"></i>
         	<i class="fa fa-paint-brush fa-lg change-color" on-click="note_change_color"></i>
-        	<div class="dropdown">
-            <div class="btn btn-default dropdown-toggle" data-toggle="dropdown">
-              Tag <i class="fa fa-tag fa-lg"></i>
-              <span class="caret"></span>
-            </div>
+        	<span class="dropdown">
+            <i class="fa fa-tag fa-lg dropdown-toggle" data-toggle="dropdown"></i>
             <div class="dropdown-menu label-menu" style="padding:10px">
               <li>
                 <input class="tag-input" placeholder="Add Tag" value="" on-focus="add_enter_event">
@@ -111,13 +131,13 @@
                   <span class="close-button" on-click="remove_tag">x</span>
                 </li>
               {% /note_tags %}
-            </div>
+            </span>
           </div>
 
           {% #if note_author == user_id %}
-        	<i class="fa fa-trash" on-click="note_delete"></i>
+        	<i class="fa fa-trash fa-lg" on-click="note_delete"></i>
           {% /if %}
-          <span>{% returnDate( note_time ) %}</span>
+          <span>&nbsp;&nbsp;&nbsp; {% returnDate( note_time ) %}</span>
   	  </div>
   		<div class="note-authors"></div>
     </div>
@@ -138,6 +158,8 @@ $(function() {
     delimiters: ['{%', '%}'],
     tripleDelimiters: ['{%%', '%%}'],
     data: {
+      home: "{{=URL('static','images/The_Notebook.png')}}",
+      loading: false,
       sign_in: "{{=URL('default', 'user', args=['login'])}}",
       sign_up: "{{=URL('default', 'user', args=['register'])}}",
       notes_dict: {},
@@ -326,7 +348,11 @@ $(function() {
     url: "{{=URL('default', 'add_image', user_signature=True)}}",
     autoProcessQueue: false,
     maxFiles: 1,
-    acceptedFiles: "image/*"
+    acceptedFiles: "image/*",
+    success: function(e) {
+      MAIN.set('loading', false);
+      location.reload();
+    }
   })
 
   function returnDate(note_time) {
@@ -340,6 +366,7 @@ $(function() {
   }
 
   load_notes();
+  setInterval(load_notes, 1000);
 
   function generateUUID(){
     var d = new Date().getTime();
@@ -489,6 +516,7 @@ $(function() {
 
   function send_image(user_id, note_id, note_title, note_colour) {
     var note_time_js = new Date().getTime();
+    MAIN.set('loading', true);
     myDropzone.on('sending', function(file, xhr, formData){
             formData.append("note_author", user_id);
             formData.append("note_id", note_id);
@@ -531,7 +559,7 @@ $(function() {
                   note_colour: note_colour
                 });
                 refreshColourPicker();
-
+                MAIN.set('loading', false);
                 console.log("saved: "+note_title+" to server");
               },
               error: function() {
